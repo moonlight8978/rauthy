@@ -48,6 +48,7 @@ pub mod theme;
 pub mod tos;
 pub mod tos_user_accept;
 pub mod user_attr;
+pub mod user_federation;
 pub mod user_login_states;
 pub mod user_revoke;
 pub mod users;
