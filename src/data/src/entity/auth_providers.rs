@@ -39,7 +39,7 @@ use utoipa::ToSchema;
 #[serde(rename_all = "lowercase")]
 pub enum AuthProviderType {
     Custom,
-    Github,
+    GitHub,
     Google,
     OIDC,
 }
@@ -48,7 +48,7 @@ impl AuthProviderType {
     pub fn as_str(&self) -> &str {
         match self {
             Self::Custom => "custom",
-            Self::Github => "github",
+            Self::GitHub => "github",
             Self::Google => "google",
             Self::OIDC => "oidc",
         }
@@ -61,7 +61,7 @@ impl TryFrom<&str> for AuthProviderType {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let slf = match value {
             "custom" => Self::Custom,
-            "github" => Self::Github,
+            "github" => Self::GitHub,
             "google" => Self::Google,
             "oidc" => Self::OIDC,
             _ => {
@@ -86,7 +86,7 @@ impl From<rauthy_api_types::auth_providers::AuthProviderType> for AuthProviderTy
     fn from(value: rauthy_api_types::auth_providers::AuthProviderType) -> Self {
         match value {
             rauthy_api_types::auth_providers::AuthProviderType::Custom => Self::Custom,
-            rauthy_api_types::auth_providers::AuthProviderType::Github => Self::Github,
+            rauthy_api_types::auth_providers::AuthProviderType::GitHub => Self::GitHub,
             rauthy_api_types::auth_providers::AuthProviderType::Google => Self::Google,
             rauthy_api_types::auth_providers::AuthProviderType::OIDC => Self::OIDC,
         }
@@ -97,7 +97,7 @@ impl From<AuthProviderType> for rauthy_api_types::auth_providers::AuthProviderTy
     fn from(value: AuthProviderType) -> Self {
         match value {
             AuthProviderType::Custom => Self::Custom,
-            AuthProviderType::Github => Self::Github,
+            AuthProviderType::GitHub => Self::GitHub,
             AuthProviderType::Google => Self::Google,
             AuthProviderType::OIDC => Self::OIDC,
         }
@@ -540,6 +540,10 @@ impl AuthProvider {
     async fn invalidate_cache_all() -> Result<(), ErrorResponse> {
         DB::hql().delete(Cache::App, Self::cache_idx("all")).await?;
 
+        // We don't really need to clean all HTML caches, but rebuilding all of them
+        // is a lot easier to maintain and auth providers are not updated often anyway.
+        DB::hql().clear_cache(Cache::Html).await?;
+
         // Directly update the template cache preemptively.
         // This is needed all the time anyway.
         AuthProviderTemplate::update_cache().await?;
@@ -761,7 +765,11 @@ impl AuthProviderTemplate {
             return Ok(slf);
         }
 
-        let providers = AuthProvider::find_all().await?;
+        let providers = AuthProvider::find_all()
+            .await?
+            .into_iter()
+            .filter(|p| p.enabled)
+            .collect::<Vec<_>>();
         let mut slf = Vec::with_capacity(providers.len());
         for provider in providers {
             let updated = Logo::find_cached(&provider.id, &LogoType::AuthProvider)
@@ -844,6 +852,11 @@ pub struct AuthProviderIdClaims<'a> {
     pub birthdate: Option<Cow<'a, str>>,
     pub locale: Option<Cow<'a, str>>,
     pub phone: Option<Cow<'a, str>>,
+
+    // some providers (e.g. Github) provide the username as `login`
+    pub login: Option<Cow<'a, str>>,
+    pub preferred_username: Option<Cow<'a, str>>,
+    pub zoneinfo: Option<Cow<'a, str>>,
 
     pub json_bytes: Option<&'a [u8]>,
 }
@@ -1233,6 +1246,29 @@ impl AuthProviderIdClaims<'_> {
             }
             found_values = true;
         }
+        if let Some(tz) = &self.zoneinfo {
+            user_values.tz = Some(tz.to_string());
+            found_values = true;
+        }
+
+        let preferred_username = if let Some(username) = &self.preferred_username {
+            Some(username.to_string())
+        } else {
+            self.login.as_ref().map(|l| l.to_string())
+        };
+        if let Some(username) = preferred_username {
+            // Check via local read first, which is a lot cheaper than write through the Raft.
+            if UserValues::validate_preferred_username_free(username.clone())
+                .await
+                .is_ok()
+            {
+                // We ignore the result in case of a race condition.
+                // Better continue without setting the username than failing.
+                // The user can edit it later on anyway.
+                let _ = UserValues::upsert_preferred_username(user.id.clone(), username).await;
+            }
+        }
+
         if found_values {
             UserValues::upsert(user.id.clone(), user_values).await?;
         }

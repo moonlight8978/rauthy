@@ -178,6 +178,9 @@ export const I18nDe: I18n = {
         invalidKeyUsed: 'Ungültiger Sicherheitsschlüssel',
         login: 'Login',
         mfaAck: 'Bestätigt',
+        navigateToAccount: 'Account Dashboard',
+        needsUserUpdate: `Es fehlen Informationen zum Account. Diese benötigen ein Update, bevor
+            mit dem Login fortgefahren werden kann.`,
         orLoginWith: 'oder einloggen mit',
         password: 'Password',
         passwordExpired:
@@ -303,13 +306,15 @@ export const I18nDe: I18n = {
             kommt.`,
     },
     register: {
-        alreadyRegistered: 'E-Mail is bereits registriert',
+        alreadyRegisteredEmail: 'E-Mail is bereits registriert',
+        alreadyRegisteredUsername: 'Benutzername is bereits vergeben',
         domainAllowed: 'Erlaubte Domain:',
         domainErr: 'E-Mail Domain ist nicht erlaubt',
         domainRestricted: 'E-Mail Domains sind beschränkt',
         email: 'E-Mail',
         emailBadFormat: 'Ungültiges E-Mail Format',
         emailCheck: 'Bitte prüfen Sie Ihren E-Mail Posteingang',
+        orRegisterWith: 'order registrieren mit',
         regexName: 'Name mit 2 - 32 Buchstaben ohne Sonderzeichen',
         register: 'Registrieren',
         success: 'Registrierung erfolgreich',

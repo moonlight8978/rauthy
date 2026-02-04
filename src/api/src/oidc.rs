@@ -187,6 +187,7 @@ pub async fn get_authorize(
         // check if we can re-use a still valid session or need to create a new one
         let session = if principal.session.is_some() {
             if principal.validate_session_auth_or_init().is_ok() {
+                #[allow(clippy::unnecessary_unwrap)]
                 principal.session.unwrap()
             } else {
                 Session::new(
@@ -394,8 +395,10 @@ pub async fn post_authorize_refresh(
     Json(payload): Json<LoginRefreshRequest>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    let session = principal.validate_session_auth()?;
+    principal.validate_session_auth()?;
     payload.validate()?;
+
+    let session = principal.into_inner().session.unwrap();
 
     let (client, header_origin) = validation::validate_auth_req_param(
         &req,
@@ -783,7 +786,14 @@ pub async fn rotate_jwk(principal: ReqPrincipal) -> Result<HttpResponse, ErrorRe
     ),
 )]
 #[post("/oidc/session")]
-pub async fn post_session(req: HttpRequest) -> Result<HttpResponse, ErrorResponse> {
+pub async fn post_session(
+    principal: ReqPrincipal,
+    req: HttpRequest,
+) -> Result<HttpResponse, ErrorResponse> {
+    if principal.validate_session_auth_or_init().is_ok() {
+        return Ok(HttpResponse::Ok().finish());
+    }
+
     let session = Session::new(
         RauthyConfig::get().vars.lifetimes.session_lifetime,
         real_ip_from_req(&req).ok(),

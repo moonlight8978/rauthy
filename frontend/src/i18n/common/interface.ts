@@ -139,6 +139,8 @@ export interface I18n {
         invalidKeyUsed: string;
         login: string;
         mfaAck: string;
+        navigateToAccount: string;
+        needsUserUpdate: string;
         orLoginWith: string;
         password: string;
         passwordExpired: string;
@@ -249,13 +251,15 @@ export interface I18n {
         successPasskey2: string;
     };
     register: {
-        alreadyRegistered: string;
+        alreadyRegisteredEmail: string;
+        alreadyRegisteredUsername: string;
         domainAllowed: string;
         domainErr: string;
         domainRestricted: string;
         email: string;
         emailBadFormat: string;
         emailCheck: string;
+        orRegisterWith: string;
         regexName: string;
         register: string;
         success: string;

@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { formatDateFromTs, saveCsrfToken, saveProviderToken } from '$utils/helpers';
+    import { formatDateFromTs, saveCsrfToken } from '$utils/helpers';
     import Button from '$lib5/button/Button.svelte';
     import WebauthnRequest from '$lib5/WebauthnRequest.svelte';
     import Input from '$lib5/form/Input.svelte';
     import LangSelector from '$lib5/LangSelector.svelte';
     import {
         IS_DEV,
-        PKCE_VERIFIER_UPSTREAM,
         TPL_AUTH_PROVIDERS,
         TPL_CLIENT_LOGO_UPDATED,
         TPL_CLIENT_NAME,
@@ -41,10 +40,11 @@
     import ClientLogo from '$lib5/ClientLogo.svelte';
     import type { ProviderLoginRequest } from '$api/types/auth_provider.ts';
     import { fetchSolvePow } from '$utils/pow';
-    import { generatePKCE } from '$utils/pkce';
     import { PATTERN_ATPROTO_ID } from '$utils/patterns';
     import type { ToSAwaitLoginResponse, ToSLatestResponse } from '$api/types/tos';
     import TosAccept from '$lib/TosAccept.svelte';
+    import { execProviderLogin } from '$utils/login';
+    import Modal from '$lib/Modal.svelte';
 
     const inputWidth = '18rem';
 
@@ -101,6 +101,8 @@
 
     let tos: undefined | ToSLatestResponse = $state();
     let tosAcceptCode = $state('');
+
+    let showModalUpdate = $state(false);
 
     onMount(() => {
         if (!needsPassword) {
@@ -312,6 +314,9 @@
             } else {
                 console.error('did not receive a proper WebauthnLoginResponse after HTTP200');
             }
+        } else if (res.status === 205) {
+            // -> all good, password only account, user needs to update some values
+            showModalUpdate = true;
         } else if (res.status === 206) {
             // login successful, but the user needs to accept updated ToS
             let body = res.body as ToSAwaitLoginResponse;
@@ -386,24 +391,6 @@
     }
 
     function providerLogin(id: string) {
-        generatePKCE().then(pkce => {
-            if (pkce) {
-                localStorage.setItem(PKCE_VERIFIER_UPSTREAM, pkce.verifier);
-                providerLoginPkce(id, pkce.challenge);
-            }
-        });
-    }
-
-    async function onToSCancel() {
-        password = '';
-        userId = '';
-        tosAcceptCode = '';
-        tos = undefined;
-        isLoading = false;
-        mfaPurpose = undefined;
-    }
-
-    async function providerLoginPkce(id: string, pkce_challenge: string) {
         // make sure to reset input fields to not trigger a failing validation
         email = '';
         password = '';
@@ -418,7 +405,6 @@
         }
 
         isLoading = true;
-        let pow = (await fetchSolvePow()) || '';
 
         let payload: ProviderLoginRequest = {
             email: email || undefined,
@@ -430,26 +416,23 @@
             code_challenge: challenge,
             code_challenge_method: challengeMethod,
             provider_id: id,
-            pkce_challenge,
-            pow,
+            pkce_challenge: '',
+            pow: '',
             ...(isAtproto && { handle: atprotoHandle }),
         };
+        execProviderLogin(payload).then(errMsg => {
+            err = errMsg || '';
+            isLoading = false;
+        });
+    }
 
-        let res = await fetchPost<string>('/auth/v1/providers/login', payload);
+    async function onToSCancel() {
+        password = '';
+        userId = '';
+        tosAcceptCode = '';
+        tos = undefined;
         isLoading = false;
-
-        if (res.text) {
-            saveProviderToken(res.text);
-
-            let loc = res.headers.get('location');
-            if (!loc) {
-                console.error('no location header set for provider login');
-                return;
-            }
-            window.location.href = loc;
-        } else {
-            err = res.error?.message || 'Error';
-        }
+        mfaPurpose = undefined;
     }
 
     function onWebauthnError(error: string) {
@@ -460,6 +443,9 @@
 
     function onWebauthnSuccess(data?: WebauthnAdditionalData) {
         if (!data) {
+            // will be empty if the user needs to update values
+            mfaPurpose = undefined;
+            showModalUpdate = true;
             return;
         }
 
@@ -708,6 +694,13 @@
                         {/each}
                     </div>
                 {/if}
+
+                <Modal bind:showModal={showModalUpdate} strict>
+                    <p>{t.authorize.needsUserUpdate}</p>
+                    <Button onclick={() => window.location.replace('/auth/v1/account')}>
+                        {t.authorize.navigateToAccount}
+                    </Button>
+                </Modal>
             </div>
 
             <ThemeSwitch absolute />

@@ -306,6 +306,7 @@ impl Default for Vars {
                 token_revoke_on_logout: false,
                 token_revoke_device_tokens: false,
                 whoami_headers: false,
+                admin_button_hide: false,
             },
             auth_headers: VarsAuthHeaders {
                 enable: false,
@@ -778,6 +779,7 @@ impl Default for Vars {
                 country: UserValueConfigValue::Optional,
                 phone: UserValueConfigValue::Optional,
                 tz: UserValueConfigValue::Optional,
+                revalidate_during_login: false,
                 preferred_username: VarsUserPreferredUsername {
                     preferred_username: UserValueConfigValue::Optional,
                     immutable: true,
@@ -993,6 +995,14 @@ impl Vars {
         }
         if let Some(v) = t_bool(&mut table, "access", "whoami_headers", "WHOAMI_HEADERS") {
             self.access.whoami_headers = v;
+        }
+        if let Some(v) = t_bool(
+            &mut table,
+            "access",
+            "admin_button_hide",
+            "ADMIN_BUTTON_HIDE",
+        ) {
+            self.access.admin_button_hide = v;
         }
     }
 
@@ -2708,6 +2718,15 @@ impl Vars {
             self.user_values.tz = UserValueConfigValue::from(v.as_str());
         }
 
+        if let Some(v) = t_bool(
+            &mut table,
+            "user_values",
+            "revalidate_during_login",
+            "USER_VALUES_REVALIDATE_DURING_LOGIN",
+        ) {
+            self.user_values.revalidate_during_login = v;
+        }
+
         let mut table = t_table(&mut table, "preferred_username");
 
         if let Some(v) = t_str(
@@ -2912,6 +2931,7 @@ pub struct VarsAccess {
     pub token_revoke_on_logout: bool,
     pub token_revoke_device_tokens: bool,
     pub whoami_headers: bool,
+    pub admin_button_hide: bool,
 }
 
 #[derive(Debug)]
@@ -3312,6 +3332,7 @@ pub struct VarsUserValuesConfig {
     pub country: UserValueConfigValue,
     pub phone: UserValueConfigValue,
     pub tz: UserValueConfigValue,
+    pub revalidate_during_login: bool,
     pub preferred_username: VarsUserPreferredUsername,
 }
 

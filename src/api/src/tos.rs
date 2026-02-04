@@ -1,21 +1,26 @@
 use crate::ReqPrincipal;
+use actix_web::http::header;
 use actix_web::http::header::{
     ACCESS_CONTROL_ALLOW_CREDENTIALS, ACCESS_CONTROL_ALLOW_METHODS, HeaderValue, LOCATION, ORIGIN,
 };
 use actix_web::web::{Json, Path};
-use actix_web::{HttpRequest, HttpResponse, get, post};
+use actix_web::{HttpRequest, HttpResponse, get, post, web};
 use chrono::Utc;
 use rauthy_api_types::tos::{
     ToSAcceptRequest, ToSLatestResponse, ToSRequest, ToSResponse, ToSUserAcceptResponse,
 };
+use rauthy_common::constants::HEADER_HTML;
+use rauthy_common::markdown::render_sanitized_markdown;
 use rauthy_common::sanitize_html::sanitize_html;
 use rauthy_common::utils::real_ip_from_req;
 use rauthy_data::entity::auth_codes::{AuthCode, AuthCodeToSAwait};
+use rauthy_data::entity::theme::ThemeCssFull;
 use rauthy_data::entity::tos::ToS;
 use rauthy_data::entity::tos_user_accept::ToSUserAccept;
 use rauthy_data::entity::users::User;
 use rauthy_data::ipgeo::get_location;
 use rauthy_error::{ErrorResponse, ErrorResponseType};
+use tracing::warn;
 
 /// Returns all ToS
 ///
@@ -96,9 +101,38 @@ pub async fn post_tos(
     ),
 )]
 #[get("/tos/latest")]
-pub async fn get_tos_latest() -> Result<HttpResponse, ErrorResponse> {
+pub async fn get_tos_latest(
+    accept: web::Header<header::Accept>,
+) -> Result<HttpResponse, ErrorResponse> {
     if let Some(tos) = ToS::find_latest().await? {
-        Ok(HttpResponse::Ok().json(ToSLatestResponse::from(tos)))
+        warn!("Accept: {:?}", accept);
+        let wants_html = accept
+            .into_inner()
+            .iter()
+            .any(|p| p.item.essence_str() == "text/html");
+
+        if wants_html {
+            let theme_ts = ThemeCssFull::find_theme_ts_rauthy().await?;
+            let div = render_sanitized_markdown(&tos.content);
+            let html = format!(
+                r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rauthy ToS</title>
+    <link rel="icon" href="/auth/v1/assets/rauthy_light.svg" />
+    <link rel="stylesheet" href="/auth/v1/theme/rauthy/{theme_ts}" />
+</head>
+<body>{div}</body>
+</html>
+            "#
+            );
+            Ok(HttpResponse::Ok().insert_header(HEADER_HTML).body(html))
+        } else {
+            Ok(HttpResponse::Ok().json(ToSLatestResponse::from(tos)))
+        }
     } else {
         Ok(HttpResponse::NoContent().finish())
     }
@@ -232,20 +266,25 @@ async fn handle_tos_accept_deny(
     auth_code.reset_exp(code_await.auth_code_lifetime).await?;
     code_await.delete().await?;
 
-    let mut resp = HttpResponse::Accepted()
-        .insert_header((LOCATION, code_await.header_loc))
-        .finish();
+    let mut builder = if code_await.needs_user_update {
+        HttpResponse::ResetContent()
+    } else {
+        let mut builder = HttpResponse::Accepted();
+        builder.insert_header((LOCATION, code_await.header_loc));
+        builder
+    };
+
     if let Some(value) = code_await.header_origin {
-        resp.headers_mut()
-            .insert(ORIGIN, HeaderValue::from_str(&value)?);
-        resp.headers_mut().insert(
+        builder.insert_header((ORIGIN, HeaderValue::from_str(&value)?));
+        builder.insert_header((
             ACCESS_CONTROL_ALLOW_METHODS,
             HeaderValue::from_static("POST"),
-        );
-        resp.headers_mut().insert(
+        ));
+        builder.insert_header((
             ACCESS_CONTROL_ALLOW_CREDENTIALS,
             HeaderValue::from_static("true"),
-        );
+        ));
     }
-    Ok(resp)
+
+    Ok(builder.finish())
 }

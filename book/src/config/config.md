@@ -247,6 +247,16 @@ Kubernetes secrets, or simply provide the whole config as one secret (my preferr
 # overwritten by: WHOAMI_HEADERS
 #whoami_headers = false
 
+# You can hide the 'Admin' button on the root / landing page for the UI.
+# The admin interface is always reachable via `/auth/v1/admin`, and the
+# button will only redirect, of course, only when the user is assigned to
+# the `rauthy_admin` role. However, if you are hosting some public service,
+# you might not want the button to show up there.
+#
+# default: false
+# overwritten by: ADMIN_BUTTON_HIDE
+#admin_button_hide = false
+
 [atproto]
 # Set to `true` to enable the ATProto provider. If the public URL is
 # 'localhost' it should be changed to '127.0.0.1', if `dev_mode = true`
@@ -1514,7 +1524,7 @@ level_failed_login = 'info'
 # If set to 'true', it will disable the app version
 # checker. This is a scheduled task that looks up the
 # latest version periodically by doing a request to the
-# Github API to check the latest release. This ignores
+# GitHub API to check the latest release. This ignores
 # any type of prerelease and will only notify for a new stable.
 #
 # default: false
@@ -2433,6 +2443,23 @@ storage_type = 'db'
 #phone = 'optional'
 # default: 'optional'
 #tz = 'optional'
+
+# Controls if the value requirements should be re-validated during
+# each single login. In most cases, you don't want this. It will
+# trigger additional database queries during the login procedure,
+# which are unnnecessary in most situations.
+# However, if you decide to make the requirements more strict down
+# the road, or you use upstream auth providers which may not provide
+# all necessary values, you might want to enable this setting.
+#
+# If a mismatch is found during login, it will be prevented and a
+# message will be shown to the user with the information, that some
+# information is missing. Only when all required values are set,
+# logins will be allowed again.
+#
+# default: false
+# overwritten_by: USER_VALUES_REVALIDATE_DURING_LOGIN
+#revalidate_during_login = false
 
 [user_values.preferred_username]
 

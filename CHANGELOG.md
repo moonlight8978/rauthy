@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.34.2
+
+### Changes
+
+#### Create new ToS improvements
+
+You will now have an additional button in the Admin UI, which lets you create a new ToS from the
+currently selected one as a template.
+
+When you added a ToS to Rauthy, it would save a pre-rendered and sanitized HTML from the given
+markdown input, which will then be served to any user that needs to accept the ToS on login.
+However, this made it impossible to add this new feature. If you wanted to do just a small change,
+you needed to provide the full ToS from scratch. You can write HTML directly in the markdown editor,
+but this is of course not the best UX.
+
+This feature will of course not work for any already added, pre-rendered HTML ToS, but it will for
+all future ones. Rauthy will now save the raw markdown and render it to HTML dynamically.
+
+In addition, content negotiation was added to the `/auth/v1/tos/latest` endpoint. When the client
+`Accept`s `text/html`, Rauthy will dynamically render a full HTML page instead of returning JSON.
+This could be used to provide external links to Rauthys ToS.
+
+[#1356](https://github.com/sebadob/rauthy/pull/1356)
+
+### Bugfix
+
+- With the rework of login location checks, the refresh tokens for the `device_code` flow stopped
+  working when using Hiqlite as the database, because of a deserialization issue.
+  [#1352](https://github.com/sebadob/rauthy/pull/1352)
+- When the `preferred_username` was set to required, and the registration was open, a misleading
+  error message was displayed, if the username was already taken.
+  [#1355](https://github.com/sebadob/rauthy/pull/1355)
+
 ## v0.34.1
 
 ### Bugfix
@@ -3268,13 +3301,13 @@ reasons, which means this change should only affect the Rauthy Admin UI.
 
 Gitlab is special and does its own, annoying thing to make it usable as an upstream IdP. An issue
 has been found when someone tries to log in with no publicly shown email address. In this worst case
-scenario, a successful login to Github while retrieving all necessary information (email is
+scenario, a successful login to GitHub while retrieving all necessary information (email is
 mandatory for Rauthy), you need to do 3 different API requests.
 
-This version also makes it possible to log in via Github IdP with an account with only private email
+This version also makes it possible to log in via GitHub IdP with an account with only private email
 addresses. A different `scope` for the login is necessary to make this possible. The template in the
-UI has been updated, but this will not affect existing Github IdP Providers. If you are currently
-using Github as upstream IdP, please change the `scope` manually from `read:user` to `user:email`.
+UI has been updated, but this will not affect existing GitHub IdP Providers. If you are currently
+using GitHub as upstream IdP, please change the `scope` manually from `read:user` to `user:email`.
 
 [#665](https://github.com/sebadob/rauthy/pull/665)
 
@@ -4900,8 +4933,8 @@ developers and new contributors. These changes are not listed in the release not
 #### Upstream Auth Providers
 
 Rauthy v0.22.0 brings (beta) support for upstream authentication providers.  
-This is a huge thing. It will basically allow you to set up things like *Sign In with Github* into
-Rauthy. You could use your Github account for signup and login, and manage custom groups, scopes,
+This is a huge thing. It will basically allow you to set up things like *Sign In with GitHub* into
+Rauthy. You could use your GitHub account for signup and login, and manage custom groups, scopes,
 and so on for the users on Rauthy. This simplifies the whole onboarding and login for normal users a
 lot.
 
@@ -4922,14 +4955,14 @@ The supported features (so far) are:
 - auto OpenID Connect metadata discovery
 - accept invalid TLS certs for upstream clients, for instance inside self-hosted environments
 - provide a root certificate for an upstream client for the same reason as above
-- choose a template for the config (currently Google and Github exist)
+- choose a template for the config (currently Google and GitHub exist)
 - fully customized endpoint configuration if the provider does not support auto-lookup
 - optional mfa claim mapping by providing a json parse regex:  
   If the upstream provider returns information about if the user has actually done at least a 2FA
   sign in, Rauthy can extract this information dynamically from the returned JSON. For instance,
   Rauthy itself will add an `amr` claim to the `id_token` and you can find a value with `mfa` inside
   it, if the user has done an MFA login.  
-  Github returns this information as well (which has been added to the template).
+  GitHub returns this information as well (which has been added to the template).
 - optional `rauthy_admin` claim mapping:
   If you want to allow full rauthy admin access for a user depending on some value returned by the
   upstream provider, you can do a mapping just like for the mfa claim above.
@@ -5958,7 +5991,7 @@ itself, and you are basically screwed, if the client does not have its own "forc
 Since we do have an Events system now, there is a new scheduled cron job, which checks the
 latest available Rauthy Version.
 
-This Job runs once every 8 hours and does a single poll to the Github Releases API. It looks
+This Job runs once every 8 hours and does a single poll to the GitHub Releases API. It looks
 for the latest available Rauthy Version that is not a prerelease or anything unstable.
 If it finds a version higher than the currently running one, a new Event will be generated.
 Additionally,
@@ -6311,7 +6344,7 @@ than the docker hub free tier is.
 - Made all UI parts work on mobile (except for the Admin UI itself)
   [a4f31f2](https://github.com/sebadob/rauthy/commit/a4f31f22396b5767c5a2c20e0253171910296447)
   [4ee3540](https://github.com/sebadob/rauthy/commit/4ee3540d9b32e6f0e2fbd5cf5eabcd7736179da8)
-- Images will be published on Github Container Registry as well from now on
+- Images will be published on GitHub Container Registry as well from now on
   [cc15ea9](https://github.com/sebadob/rauthy/commit/cc15ea9cb5d7c0bd6d3cad1fea908e656f488e50)
 - All dependencies have been updates in various places. This just keeps everything up to date
   and fixed some potential security issues in third party libraries
