@@ -7,7 +7,9 @@ services:
       - "1080:1080"
 
   app:
-    image: alpine:latest
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     command: sleep infinity
     tty: true
     working_dir: /workspace
