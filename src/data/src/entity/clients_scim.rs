@@ -242,6 +242,7 @@ impl ClientScim {
         // The user sync however can take a very long time depending on the amount of users,
         // so it will be pushed into the background.
         let groups = if self.sync_groups {
+            info!("Syncing SCIM groups for {}", self.client_id);
             self.sync_groups().await?;
             Group::find_all().await?
         } else {
@@ -250,6 +251,7 @@ impl ClientScim {
 
         task::spawn(async move {
             let mut groups_remote = HashMap::with_capacity(groups.len());
+            info!("Syncing SCIM users for {}", self.client_id);
             if let Err(err) = self.sync_users(None, &groups, &mut groups_remote).await {
                 error!(?err);
             }
@@ -276,6 +278,7 @@ impl ClientScim {
     }
 
     async fn sync_groups_exec(&self) -> Result<(), ErrorResponse> {
+        info!("Syncing SCIM groups for {}", self.client_id);
         let mut groups = Group::find_all().await?;
         let mut start_index = 1;
         let count = 100;
@@ -289,7 +292,7 @@ impl ClientScim {
                 .send()
                 .await?;
             if !res.status().is_success() {
-                let err = res.json::<ScimError>().await?;
+                let err = ScimError::extract_from_res(res).await;
                 return Err(ErrorResponse::new(
                     ErrorResponseType::Scim,
                     format!("SCIM GET /Groups error: {err:?}"),
@@ -446,7 +449,7 @@ impl ClientScim {
                 }
             }
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             error!(?err);
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
@@ -532,7 +535,7 @@ impl ClientScim {
                 ))
             }
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
                 format!(
@@ -620,7 +623,7 @@ impl ClientScim {
         if res.status().is_success() {
             Ok(())
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
                 format!(
@@ -684,7 +687,7 @@ impl ClientScim {
         if res.status().is_success() {
             Ok(())
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
                 format!(
@@ -764,7 +767,7 @@ impl ClientScim {
                 }
             }
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             error!("{:?}", err);
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
@@ -950,8 +953,10 @@ impl ClientScim {
             .await?
         {
             None => {
-                self.create_user(expected_groups, payload, groups_local, groups_remote)
-                    .await?;
+                if !unlink_ext_id {
+                    self.create_user(expected_groups, payload, groups_local, groups_remote)
+                        .await?;
+                }
             }
             Some(user_remote) => {
                 self.update_user(
@@ -1003,7 +1008,7 @@ impl ClientScim {
             }
             Ok(())
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             error!("{:?}", err);
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
@@ -1028,6 +1033,10 @@ impl ClientScim {
         if unlink_ext_id {
             update_payload.external_id = None;
         }
+
+        // add remote id, required i.e. by vCenter
+        let remote_id = user_remote.id.clone().unwrap_or_default();
+        update_payload.id = Some(remote_id.to_owned());
 
         let json = serde_json::to_string(&update_payload)?;
         let res = http_client()
@@ -1060,7 +1069,7 @@ impl ClientScim {
 
             Ok(())
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
                 format!(
@@ -1110,7 +1119,7 @@ impl ClientScim {
         if res.status().is_success() {
             Ok(())
         } else {
-            let err = res.json::<ScimError>().await?;
+            let err = ScimError::extract_from_res(res).await;
             Err(ErrorResponse::new(
                 ErrorResponseType::Scim,
                 format!(
@@ -1233,7 +1242,7 @@ impl ClientScim {
                     .await?;
                 if !res.status().is_success() {
                     debug!(?res, "SCIM PatchOp Error");
-                    let err = res.json::<ScimError>().await?;
+                    let err = ScimError::extract_from_res(res).await;
                     error!(
                         self.client_id,
                         ?err,
@@ -1262,7 +1271,7 @@ impl ClientScim {
                 .send()
                 .await?;
             if !res.status().is_success() {
-                let err = res.json::<ScimError>().await?;
+                let err = ScimError::extract_from_res(res).await;
                 error!(self.client_id, ?err, "Error removing SCIM Group assignment",);
             }
         }
