@@ -13,6 +13,3 @@ services:
     working_dir: /workspace
     volumes:
       - ..:/workspace:cached
-
-volumes:
-  rauthy-data:

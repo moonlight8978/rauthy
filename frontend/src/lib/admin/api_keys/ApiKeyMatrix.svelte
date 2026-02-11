@@ -26,13 +26,13 @@
         ['Generic', false, false, false, false],
         ['Groups', false, false, false, false],
         ['Pam', false, false, false, false],
-        ['Providers', false, false, false, false],
         ['Roles', false, false, false, false],
         ['Secrets', false, false, false, false],
         ['Sessions', false, false, false, false],
         ['Scopes', false, false, false, false],
         ['UserAttributes', false, false, false, false],
         ['Users', false, false, false, false],
+        ['Providers', false, false, false, false],
     ]);
 
     $effect(() => {
@@ -60,25 +60,25 @@
                     case 'Pam':
                         idx = 5;
                         break;
-                    case 'Providers':
+                    case 'Roles':
                         idx = 6;
                         break;
-                    case 'Roles':
+                    case 'Secrets':
                         idx = 7;
                         break;
-                    case 'Secrets':
+                    case 'Sessions':
                         idx = 8;
                         break;
-                    case 'Sessions':
+                    case 'Scopes':
                         idx = 9;
                         break;
-                    case 'Scopes':
+                    case 'UserAttributes':
                         idx = 10;
                         break;
-                    case 'UserAttributes':
+                    case 'Users':
                         idx = 11;
                         break;
-                    case 'Users':
+                    case 'Providers':
                         idx = 12;
                         break;
                 }

@@ -319,13 +319,13 @@ pub enum AccessGroup {
     Generic,
     Groups,
     Roles,
-    Providers,
     Secrets,
     Sessions,
     Scopes,
     UserAttributes,
     Users,
     Pam,
+    Providers,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
