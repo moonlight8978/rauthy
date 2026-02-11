@@ -166,6 +166,29 @@ impl Principal {
         }
     }
 
+    /// Validates an ApiKey OR a valid authenticated session.
+    /// If both are given, the ApiKey will have the higher priority since it is more specific.
+    /// Returns an error with an invalid ApiKey even when a valid session exists.
+    #[inline(always)]
+    pub fn validate_api_key_or_session_auth(
+        &self,
+        access_group: AccessGroup,
+        access_rights: AccessRights,
+    ) -> Result<(), ErrorResponse> {
+        match self.validate_api_key(access_group, access_rights) {
+            Ok(_) => Ok(()),
+
+            Err(err) => {
+                if err.error == ErrorResponseType::Forbidden {
+                    Err(err)
+                } else {
+                    self.validate_session_auth()?;
+                    Ok(())
+                }
+            }
+        }
+    }
+
     /// Validates the principal, that it is either an admin or the user matches the
     /// given `user_id`
     #[inline(always)]
