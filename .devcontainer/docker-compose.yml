@@ -1,0 +1,15 @@
+services:
+  mailcrab:
+    image: marlonb/mailcrab:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+
+  app:
+    image: alpine:latest
+    command: sleep infinity
+    tty: true
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached

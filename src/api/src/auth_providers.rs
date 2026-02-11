@@ -11,6 +11,7 @@ use rauthy_api_types::auth_providers::{ProviderLookupResponse, ProviderResponse}
 use rauthy_api_types::generic::LogoParams;
 use rauthy_api_types::users::{UserResponse, WebauthnLoginResponse};
 use rauthy_common::constants::{HEADER_JSON, PROVIDER_ATPROTO};
+use rauthy_data::entity::api_keys::{AccessGroup, AccessRights};
 use rauthy_data::entity::auth_providers::{
     AuthProvider, AuthProviderLinkCookie, AuthProviderTemplate,
 };
@@ -40,7 +41,7 @@ use validator::Validate;
 )]
 #[post("/providers")]
 pub async fn post_providers(principal: ReqPrincipal) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Read)?;
 
     let providers = AuthProvider::find_all().await?;
     let mut resp = Vec::with_capacity(providers.len());
@@ -71,7 +72,7 @@ pub async fn post_provider(
     Json(payload): Json<ProviderRequest>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Create)?;
     payload.validate()?;
 
     if payload.issuer == PROVIDER_ATPROTO {
@@ -118,7 +119,7 @@ pub async fn post_provider_lookup(
     Json(payload): Json<ProviderLookupRequest>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Read)?;
     payload.validate()?;
 
     let resp = AuthProvider::lookup_config(&payload).await?;
@@ -291,7 +292,7 @@ pub async fn put_provider(
     Json(payload): Json<ProviderRequest>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Update)?;
     payload.validate()?;
 
     if !payload.use_pkce && payload.client_secret.is_none() {
@@ -330,7 +331,7 @@ pub async fn delete_provider(
     id: web::Path<String>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Delete)?;
 
     AuthProvider::delete(&id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
@@ -360,7 +361,7 @@ pub async fn get_provider_delete_safe(
     id: web::Path<String>,
     principal: ReqPrincipal,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Delete)?;
 
     let linked_users = AuthProvider::find_linked_users(&id.into_inner()).await?;
     if linked_users.is_empty() {
@@ -428,7 +429,7 @@ pub async fn put_provider_img(
     principal: ReqPrincipal,
     mut payload: actix_multipart::Multipart,
 ) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_admin_session()?;
+    principal.validate_api_key_or_admin_session(AccessGroup::Providers, AccessRights::Update)?;
     content_len_limit(&req, 10)?;
 
     // we only accept a single field from the Multipart upload -> no looping here
