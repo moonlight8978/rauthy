@@ -270,7 +270,7 @@ pub async fn post_password_hash_times(
 /// Returns the currently configured password policy
 ///
 /// **Permissions**
-/// - authenticated
+/// - authenticated or ApiKey with `Generic::Read`
 #[utoipa::path(
     get,
     path = "/password_policy",
@@ -278,11 +278,12 @@ pub async fn post_password_hash_times(
     responses(
         (status = 200, description = "Ok", body = PasswordPolicyResponse),
         (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
     ),
 )]
 #[get("/password_policy")]
 pub async fn get_password_policy(principal: ReqPrincipal) -> Result<HttpResponse, ErrorResponse> {
-    principal.validate_session_auth()?;
+    principal.validate_api_key_or_session_auth(AccessGroup::Generic, AccessRights::Read)?;
     let rules = PasswordPolicy::find().await?;
     Ok(HttpResponse::Ok().json(PasswordPolicyResponse::from(rules)))
 }
