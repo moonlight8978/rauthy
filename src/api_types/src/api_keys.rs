@@ -11,6 +11,7 @@ pub enum AccessGroup {
     Generic,
     Groups,
     Roles,
+    Providers,
     Secrets,
     Sessions,
     Scopes,

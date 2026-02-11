@@ -5,6 +5,7 @@ export type AccessGroup =
     | 'Generic'
     | 'Groups'
     | 'Pam'
+    | 'Providers'
     | 'Roles'
     | 'Secrets'
     | 'Sessions'
