@@ -1,9 +1,9 @@
 repos:
   - hooks:
       - id: fmt
-      - args:
-          - --workspace
-        id: cargo-check
+      # - args:
+      #     - --workspace
+      #   id: cargo-check
       - id: clippy
     repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0

@@ -1195,12 +1195,8 @@ impl AuthProviderIdClaims<'_> {
                 ..Default::default()
             };
             let user = User::create_federated(new_user).await?;
-            UserFederation::create(
-                user.id.clone(),
-                provider.id.clone(),
-                claims_user_id.clone(),
-            )
-            .await?;
+            UserFederation::create(user.id.clone(), provider.id.clone(), claims_user_id.clone())
+                .await?;
             user
         };
 
