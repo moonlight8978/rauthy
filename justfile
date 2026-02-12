@@ -30,7 +30,7 @@ default:
 setup:
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
 
     echo "npm install to set up the frontend"
     cd frontend/
@@ -64,7 +64,7 @@ setup:
 docker-buildx-setup:
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
 
     if ! {{ docker }} buildx inspect rauthy_builder; then
         # create 'rauthy_builder' buildx instance
@@ -153,7 +153,7 @@ fmt:
 clippy:
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
     cargo clippy
 
 # delete the local hiqlite database
@@ -172,7 +172,7 @@ delete-hiqlite:
 run ty="hiqlite" node_id="1":
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
 
     if [[ {{ ty }} == "postgres" ]]; then
       {{ postgres }} cargo run
@@ -221,14 +221,14 @@ version:
 test-backend: test-backend-stop delete-hiqlite
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
     {{ test_env_vars }} cargo run test
 
 # starts the test backend with memory profiling - expects `heaptrack` to be available
 test-backend-heaptrack: test-backend-stop delete-hiqlite
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
     echo "Building a release build with the 'profiling' profile - this will take some time ..."
     RUSTFLAGS=-g cargo build --profile profiling
     #echo "Temporarily removing kernel hardening and elevating ptrace rights until reboot"
@@ -253,13 +253,13 @@ test-backend-stop:
 test *test:
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
     cargo test {{ test }}
 
 # runs the full set of tests with sqlite
 test-hiqlite *test: test-backend-stop delete-hiqlite
     #!/usr/bin/env bash
-    clear
+    just ci-aware-clear
 
     cargo build
     {{ test_env_vars }} ./target/debug/rauthy test &
@@ -282,7 +282,7 @@ test-hiqlite *test: test-backend-stop delete-hiqlite
 # runs the full set of tests with postgres
 test-postgres test="": test-backend-stop postgres-stop postgres-rm delete-hiqlite postgres-start
     #!/usr/bin/env bash
-    clear
+    just ci-aware-clear
 
     cargo build
     # the Hiqlite tests are disk-backed, lets check postgres in-memory to cover this as well
@@ -368,7 +368,7 @@ build-docs:
 build-profiling:
     #!/usr/bin/env bash
     set -euxo pipefail
-    clear
+    just ci-aware-clear
     echo "Building a release build with the 'profiling' profile - this will take some time ..."
     #RUSTFLAGS=-g cargo build --profile profiling
     RUSTFLAGS=-g {{ jemalloc_conf }} cargo build --profile profiling --features jemalloc
@@ -523,3 +523,11 @@ update-deps:
     cargo update
     cd frontend
     {{ npm }} update
+
+ci-aware-clear:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+
+    if [[ -z "${CI:-}" ]]; then
+        clear
+    fi
