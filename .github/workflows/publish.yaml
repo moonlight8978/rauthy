@@ -71,7 +71,7 @@ jobs:
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/public-containers/${{ matrix.container }}
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
