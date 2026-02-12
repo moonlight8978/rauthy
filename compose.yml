@@ -1,9 +1,12 @@
 services:
   rauthy:
+    # image: ghcr.io/moonlight8978/rauthy:latest
     build: .
     volumes:
       - rauthy-data:/app/data
       - rauthy-tls:/app/tls
+    ports:
+      - 8443:8443
     environment:
       LOCAL_TEST: "true"
       LOG_LEVEL: debug
