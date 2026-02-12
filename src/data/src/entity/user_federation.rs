@@ -86,9 +86,7 @@ impl UserFederation {
         Ok(res)
     }
 
-    pub async fn delete(
-        &self,
-    ) -> Result<(), ErrorResponse> {
+    pub async fn delete(&self) -> Result<(), ErrorResponse> {
         let sql = "DELETE FROM user_federations WHERE user_id = $1 AND provider_id = $2";
         if is_hiqlite() {
             DB::hql()
@@ -100,14 +98,10 @@ impl UserFederation {
         Ok(())
     }
 
-    pub async fn delete_by_user_id(
-        user_id: &str,
-    ) -> Result<(), ErrorResponse> {
+    pub async fn delete_by_user_id(user_id: &str) -> Result<(), ErrorResponse> {
         let sql = "DELETE FROM user_federations WHERE user_id = $1";
         if is_hiqlite() {
-            DB::hql()
-                .execute(sql, params!(user_id))
-                .await?;
+            DB::hql().execute(sql, params!(user_id)).await?;
         } else {
             DB::pg_execute(sql, &[&user_id]).await?;
         }
