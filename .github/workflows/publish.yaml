@@ -80,6 +80,7 @@ jobs:
       - name: Build & push container
         uses: docker/build-push-action@v6
         with:
+          context: "."
           push: false
           platforms: linux/amd64,linux/arm64
           attests: type=sbom
