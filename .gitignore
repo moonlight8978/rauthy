@@ -24,4 +24,7 @@ heaptrack.*
 static
 templates/html
 **/.DS_Store
+
 .agent/
+plans/
+.agents/

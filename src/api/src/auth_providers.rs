@@ -231,9 +231,9 @@ pub async fn post_provider_callback_handle(
 
 /// DELETE a link between an existing user account and an upstream provider
 ///
-/// This will always unlink the currently logged-in user from its registered
-/// upstream auth provider. The user account must have been set up with at least
-/// a password or a passkey. Otherwise, this endpoint will return an error.
+/// This will always unlink the currently logged-in user from all upstream auth
+/// providers. The user account must have at least a password or a passkey set
+/// up. Otherwise, this endpoint will return an error.
 #[utoipa::path(
     delete,
     path = "/providers/link",

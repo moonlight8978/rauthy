@@ -14,6 +14,7 @@ use crate::entity::sessions::Session;
 use crate::entity::theme::ThemeCssFull;
 use crate::entity::tos::ToS;
 use crate::entity::tos_user_accept::ToSUserAccept;
+use crate::entity::user_federation::UserFederation;
 use crate::entity::users_values::UserValues;
 use crate::entity::webauthn::{PasskeyEntity, WebauthnServiceReq};
 use crate::events::event::Event;
@@ -817,6 +818,10 @@ LIMIT $2"#;
             ));
         }
 
+        // In a multi-provider setup, this is the authoritative unlink state.
+        UserFederation::delete_by_user_id(&slf.id).await?;
+
+        // Keep legacy columns in sync until they can be removed entirely.
         slf.auth_provider_id = None;
         slf.federation_uid = None;
         slf.save(None).await?;
