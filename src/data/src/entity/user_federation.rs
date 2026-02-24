@@ -85,6 +85,35 @@ impl UserFederation {
         }
     }
 
+    pub async fn has_for_user(user_id: &str) -> Result<bool, ErrorResponse> {
+        let sql = "SELECT 1 FROM user_federations WHERE user_id = $1 LIMIT 1";
+        let has_link = if is_hiqlite() {
+            !DB::hql().query_raw(sql, params!(user_id)).await?.is_empty()
+        } else {
+            DB::pg_query_rows(sql, &[&user_id], 1).await?.len() == 1
+        };
+        Ok(has_link)
+    }
+
+    pub async fn exists_for_user_provider(
+        user_id: &str,
+        provider_id: &str,
+    ) -> Result<bool, ErrorResponse> {
+        let sql = "SELECT 1 FROM user_federations WHERE user_id = $1 AND provider_id = $2 LIMIT 1";
+        let exists = if is_hiqlite() {
+            !DB::hql()
+                .query_raw(sql, params!(user_id, provider_id))
+                .await?
+                .is_empty()
+        } else {
+            DB::pg_query_rows(sql, &[&user_id, &provider_id], 1)
+                .await?
+                .len()
+                == 1
+        };
+        Ok(exists)
+    }
+
     pub async fn find_by_federation_id(
         provider_id: &str,
         federation_uid: &str,

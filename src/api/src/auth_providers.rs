@@ -18,6 +18,7 @@ use rauthy_data::entity::auth_providers::{
 use rauthy_data::entity::logos::{Logo, LogoType};
 use rauthy_data::entity::pow::PowEntity;
 use rauthy_data::entity::theme::ThemeCssFull;
+use rauthy_data::entity::user_federation::UserFederation;
 use rauthy_data::entity::users::User;
 use rauthy_data::html::HtmlCached;
 use rauthy_error::{ErrorResponse, ErrorResponseType};
@@ -521,17 +522,19 @@ pub async fn post_provider_link(
     let user_id = principal.user_id()?.to_string();
     let user = User::find(user_id).await?;
 
-    // make sure the user is currently un-linked
-    if user.auth_provider_id.is_some() {
+    let provider_id = provider_id.into_inner();
+
+    // Make sure this provider is not already linked to the account.
+    if UserFederation::exists_for_user_provider(&user.id, &provider_id).await? {
         return Err(ErrorResponse::new(
             ErrorResponseType::BadRequest,
-            "user is already federated",
+            "user is already linked to this provider",
         ));
     }
 
     // set an encrypted cookie with the provider_id + user_id / email
     let link_cookie = AuthProviderLinkCookie {
-        provider_id: provider_id.into_inner(),
+        provider_id,
         user_id: user.id,
         user_email: user.email,
     };

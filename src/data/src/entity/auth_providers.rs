@@ -1238,7 +1238,10 @@ impl AuthProviderIdClaims<'_> {
                         .await?;
 
                         (Some(user), NewFederatedUserCreated::No)
-                    } else if provider.auto_link {
+                    } else if provider.auto_link || user.federation_count > 0 {
+                        // Multi-provider login support:
+                        // if this account is already federated, allow linking an additional
+                        // provider on successful upstream authentication.
                         UserFederation::create(
                             user.id.clone(),
                             provider.id.clone(),
