@@ -111,11 +111,17 @@
         ),
     );
 
-    let providerName = $derived(
-        user.account_type?.startsWith('federated')
-            ? providers.filter(p => p.id == user.auth_provider_id)[0]?.name
-            : '',
-    );
+    let providerNames = $derived.by(() => {
+        let providerIds = user.auth_provider_ids;
+        if (providerIds?.length) {
+            return providers
+                .filter(p => providerIds.includes(p.id))
+                .map(p => p.name)
+                .join(', ');
+        }
+
+        return '';
+    });
 
     let isUnsaved = $derived.by(() => {
         if (!user || !userOrig) {
@@ -413,8 +419,8 @@
                 <div>
                     <LabeledValue label={t.account.accType}>
                         {user.account_type}
-                        {#if providerName}
-                            : {providerName}
+                        {#if providerNames}
+                            : {providerNames}
                         {/if}
                     </LabeledValue>
                 </div>

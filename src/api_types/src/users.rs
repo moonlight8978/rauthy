@@ -549,6 +549,8 @@ pub struct UserResponse {
     pub webauthn_user_id: Option<String>, // TODO get rid of the webauthn user id ? Not needed at all?
     pub user_values: UserValuesResponse,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth_provider_ids: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub auth_provider_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub federation_uid: Option<String>,

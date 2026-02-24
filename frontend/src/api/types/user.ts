@@ -130,6 +130,7 @@ export interface UserResponse {
     account_type: UserAccountTypeResponse;
     webauthn_user_id?: string;
     user_values: UserValuesResponse;
+    auth_provider_ids?: string[];
     auth_provider_id?: string;
     federation_uid?: string;
     picture_id?: string;

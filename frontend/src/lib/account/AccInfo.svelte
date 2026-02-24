@@ -23,14 +23,14 @@
         user = $bindable(),
         pamUser,
         providers,
-        authProvider,
+        authProviders,
         webIdData,
         viewModePhone,
     }: {
         user: UserResponse;
         pamUser: undefined | PamUserResponse;
         providers: AuthProvidersTemplate;
-        authProvider: undefined | AuthProviderTemplate;
+        authProviders: AuthProviderTemplate[];
         viewModePhone?: boolean;
         webIdData: undefined | WebIdResponse;
     } = $props();
@@ -40,9 +40,10 @@
     let unlinkErr = $state(false);
     let showModal = $state(false);
 
-    let isFederated = $derived(user.account_type?.startsWith('federated'));
+    let isFederated = $derived(!!user.auth_provider_ids?.length);
+    let providerNames = $derived(authProviders.map(p => p.name).join(', '));
     let accType = $derived(
-        isFederated ? `${user.account_type}: ${authProvider?.name || ''}` : user.account_type,
+        isFederated ? `${user.account_type}: ${providerNames || 'UNKNOWN'}` : user.account_type,
     );
 
     let classRow: 'rowPhone' | 'row' = $derived(viewModePhone ? 'rowPhone' : 'row');

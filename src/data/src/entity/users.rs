@@ -1820,7 +1820,10 @@ impl User {
         self.webauthn_user_id.is_some()
     }
 
-    pub fn into_response(self, user_values: Option<UserValues>) -> UserResponse {
+    pub async fn into_response(
+        self,
+        user_values: Option<UserValues>,
+    ) -> Result<UserResponse, ErrorResponse> {
         let roles = self.get_roles();
         let groups = if self.groups.is_some() {
             Some(self.get_groups())
@@ -1828,8 +1831,19 @@ impl User {
             None
         };
         let account_type = UserAccountTypeResponse::from(self.account_type());
+        let user_federations = UserFederation::find_for_user(&self.id).await?;
+        let auth_provider_ids = if user_federations.is_empty() {
+            None
+        } else {
+            Some(
+                user_federations
+                    .into_iter()
+                    .map(|f| f.provider_id)
+                    .collect::<Vec<_>>(),
+            )
+        };
 
-        UserResponse {
+        Ok(UserResponse {
             id: self.id,
             email: self.email,
             given_name: if self.given_name.is_empty() {
@@ -1854,10 +1868,11 @@ impl User {
             user_values: user_values
                 .map(UserValuesResponse::from)
                 .unwrap_or_default(),
+            auth_provider_ids,
             auth_provider_id: self.auth_provider_id,
             federation_uid: self.federation_uid,
             picture_id: self.picture_id,
-        }
+        })
     }
 
     pub fn is_argon2_uptodate(&self, params: &argon2::Params) -> Result<bool, ErrorResponse> {

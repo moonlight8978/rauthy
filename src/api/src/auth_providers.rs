@@ -249,7 +249,7 @@ pub async fn delete_provider_link(principal: ReqPrincipal) -> Result<HttpRespons
 
     let user_id = principal.user_id()?.to_string();
     let user = User::provider_unlink(user_id).await?;
-    Ok(HttpResponse::Ok().json(user.into_response(None)))
+    Ok(HttpResponse::Ok().json(user.into_response(None).await?))
 }
 
 /// GET all upstream auth providers as templated minimal JSON

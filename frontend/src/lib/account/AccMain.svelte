@@ -37,10 +37,17 @@
     let innerWidth: undefined | number = $state();
     let config: undefined | UserValuesConfig = $state();
     let providers: AuthProvidersTemplate = $state([]);
-    let authProvider = $derived.by(() => {
-        if (user.account_type?.startsWith('federated')) {
-            return providers.filter(p => p.id === user.auth_provider_id)[0];
+    let authProviders = $derived.by(() => {
+        if (!providers.length) {
+            return [];
         }
+
+        let providerIds = user.auth_provider_ids;
+        if (providerIds?.length) {
+            return providers.filter(p => providerIds.includes(p.id));
+        }
+
+        return [];
     });
 
     let viewModePhone = $derived(innerWidth && innerWidth < 560);
@@ -143,7 +150,7 @@
                         bind:user
                         {pamUser}
                         {providers}
-                        {authProvider}
+                        {authProviders}
                         viewModePhone
                         {webIdData}
                     />
@@ -152,7 +159,7 @@
                 {:else if selected === t.account.navEdit}
                     <AccEdit {config} bind:user viewModePhone />
                 {:else if selected === t.common.password}
-                    <AccPassword {user} {authProvider} viewModePhone />
+                    <AccPassword {user} {authProviders} viewModePhone />
                 {:else if selected === t.account.navMfa}
                     <AccMFA {user} />
                 {:else if selected === 'WebID'}
@@ -170,7 +177,7 @@
         <div class="wide">
             {#if !viewModeWideCompact}
                 <div class="info">
-                    <AccInfo bind:user {pamUser} {webIdData} {providers} {authProvider} />
+                    <AccInfo bind:user {pamUser} {webIdData} {providers} {authProviders} />
                 </div>
             {/if}
 
@@ -179,13 +186,13 @@
 
                 <div class="inner">
                     {#if selected === t.account.navInfo}
-                        <AccInfo bind:user {pamUser} {webIdData} {providers} {authProvider} />
+                        <AccInfo bind:user {pamUser} {webIdData} {providers} {authProviders} />
                     {:else if selected === 'PAM' && pamUser}
                         <AccPAM bind:pamUser />
                     {:else if selected === t.account.navEdit}
                         <AccEdit {config} bind:user />
                     {:else if selected === t.common.password}
-                        <AccPassword {user} {authProvider} />
+                        <AccPassword {user} {authProviders} />
                     {:else if selected === t.account.navMfa}
                         <AccMFA {user} />
                     {:else if selected === 'WebID'}
