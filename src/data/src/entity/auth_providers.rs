@@ -387,7 +387,12 @@ VALUES
     pub async fn find_linked_users(
         id: &str,
     ) -> Result<Vec<ProviderLinkedUserResponse>, ErrorResponse> {
-        let sql = "SELECT id, email FROM users WHERE auth_provider_id = $1";
+        let sql = r#"
+SELECT u.id, u.email
+FROM user_federations uf
+INNER JOIN users u
+    ON u.id = uf.user_id
+WHERE uf.provider_id = $1"#;
         let users = if is_hiqlite() {
             DB::hql().query_as(sql, params!(id)).await?
         } else {
