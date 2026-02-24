@@ -1,7 +1,7 @@
 use crate::database::DB;
 use hiqlite_macros::params;
 use rauthy_common::is_hiqlite;
-use rauthy_error::ErrorResponse;
+use rauthy_error::{ErrorResponse, ErrorResponseType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +22,18 @@ impl From<tokio_postgres::Row> for UserFederation {
 }
 
 impl UserFederation {
+    #[inline(always)]
+    fn map_unique_violation(err: ErrorResponse) -> ErrorResponse {
+        if err.message.contains("UNIQUE") {
+            ErrorResponse::new(
+                ErrorResponseType::NotAccepted,
+                "Upstream user id is already linked to another account",
+            )
+        } else {
+            err
+        }
+    }
+
     pub async fn create(
         user_id: String,
         provider_id: String,
@@ -44,7 +56,8 @@ impl UserFederation {
                         &new_federation.federation_uid
                     ),
                 )
-                .await?;
+                .await
+                .map_err(|err| Self::map_unique_violation(ErrorResponse::from(err)))?;
         } else {
             DB::pg_execute(
                 sql,
@@ -54,7 +67,8 @@ impl UserFederation {
                     &new_federation.federation_uid,
                 ],
             )
-            .await?;
+            .await
+            .map_err(Self::map_unique_violation)?;
         }
 
         Ok(new_federation)
@@ -106,5 +120,28 @@ impl UserFederation {
             DB::pg_execute(sql, &[&user_id]).await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_unique_violation() {
+        let err = ErrorResponse::new(ErrorResponseType::Database, "UNIQUE constraint failed");
+        let mapped = UserFederation::map_unique_violation(err);
+        assert_eq!(mapped.error, ErrorResponseType::NotAccepted);
+        assert_eq!(
+            mapped.message,
+            "Upstream user id is already linked to another account"
+        );
+    }
+
+    #[test]
+    fn test_map_unique_violation_passthrough() {
+        let err = ErrorResponse::new(ErrorResponseType::Database, "some other db error");
+        let mapped = UserFederation::map_unique_violation(err.clone());
+        assert_eq!(mapped, err);
     }
 }
