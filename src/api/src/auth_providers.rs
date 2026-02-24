@@ -232,24 +232,27 @@ pub async fn post_provider_callback_handle(
 
 /// DELETE a link between an existing user account and an upstream provider
 ///
-/// This will always unlink the currently logged-in user from all upstream auth
-/// providers. The user account must have at least a password or a passkey set
-/// up. Otherwise, this endpoint will return an error.
+/// This will unlink the currently logged-in user from the selected upstream auth
+/// provider. The user account must have at least a password or a passkey set up
+/// before the last provider can be removed.
 #[utoipa::path(
     delete,
-    path = "/providers/link",
+    path = "/providers/{id}/link",
     tag = "providers",
     responses(
         (status = 200, description = "OK", body = UserResponse),
         (status = 400, description = "BadRequest", body = ErrorResponse),
     ),
 )]
-#[delete("/providers/link")]
-pub async fn delete_provider_link(principal: ReqPrincipal) -> Result<HttpResponse, ErrorResponse> {
+#[delete("/providers/{id}/link")]
+pub async fn delete_provider_link(
+    principal: ReqPrincipal,
+    id: web::Path<String>,
+) -> Result<HttpResponse, ErrorResponse> {
     principal.validate_session_auth()?;
 
     let user_id = principal.user_id()?.to_string();
-    let user = User::provider_unlink(user_id).await?;
+    let user = User::provider_unlink(user_id, id.into_inner()).await?;
     Ok(HttpResponse::Ok().json(user.into_response(None).await?))
 }
 

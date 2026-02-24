@@ -793,20 +793,32 @@ LIMIT $2"#;
         Ok(res)
     }
 
-    pub async fn provider_unlink(user_id: String) -> Result<Self, ErrorResponse> {
+    pub async fn provider_unlink(
+        user_id: String,
+        provider_id: String,
+    ) -> Result<Self, ErrorResponse> {
         // we need to find the user first and validate that it has been set up properly
         // to work without a provider
         let slf = Self::find(user_id).await?;
-        if slf.password.is_none() && !slf.has_webauthn_enabled() {
+        let count_before = UserFederation::count_for_user(&slf.id).await?;
+
+        if !UserFederation::exists_for_user_provider(&slf.id, &provider_id).await? {
             return Err(ErrorResponse::new(
                 ErrorResponseType::BadRequest,
-                "You must have at least a password or passkey set up before you can \
-                remove a provider link",
+                "provider is not linked to this account",
             ));
         }
 
-        // In a multi-provider setup, this is the authoritative unlink state.
-        UserFederation::delete_by_user_id(&slf.id).await?;
+        let count_after = count_before.saturating_sub(1);
+        if slf.password.is_none() && !slf.has_webauthn_enabled() && count_after == 0 {
+            return Err(ErrorResponse::new(
+                ErrorResponseType::BadRequest,
+                "You must have at least a password or passkey set up before you can \
+                    remove a provider link",
+            ));
+        }
+
+        UserFederation::delete_by_user_provider(&slf.id, &provider_id).await?;
 
         slf.save(None).await?;
         Ok(slf)

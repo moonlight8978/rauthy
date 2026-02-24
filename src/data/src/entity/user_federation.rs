@@ -85,6 +85,19 @@ impl UserFederation {
         }
     }
 
+    pub async fn count_for_user(user_id: &str) -> Result<i64, ErrorResponse> {
+        let sql = "SELECT COUNT(*) AS count FROM user_federations WHERE user_id = $1";
+        let count = if is_hiqlite() {
+            DB::hql()
+                .query_raw_one(sql, params!(user_id))
+                .await?
+                .get("count")
+        } else {
+            DB::pg_query_one_row(sql, &[&user_id]).await?.get("count")
+        };
+        Ok(count)
+    }
+
     pub async fn has_for_user(user_id: &str) -> Result<bool, ErrorResponse> {
         let sql = "SELECT 1 FROM user_federations WHERE user_id = $1 LIMIT 1";
         let has_link = if is_hiqlite() {
@@ -147,6 +160,21 @@ impl UserFederation {
             DB::hql().execute(sql, params!(user_id)).await?;
         } else {
             DB::pg_execute(sql, &[&user_id]).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn delete_by_user_provider(
+        user_id: &str,
+        provider_id: &str,
+    ) -> Result<(), ErrorResponse> {
+        let sql = "DELETE FROM user_federations WHERE user_id = $1 AND provider_id = $2";
+        if is_hiqlite() {
+            DB::hql()
+                .execute(sql, params!(user_id, provider_id))
+                .await?;
+        } else {
+            DB::pg_execute(sql, &[&user_id, &provider_id]).await?;
         }
         Ok(())
     }

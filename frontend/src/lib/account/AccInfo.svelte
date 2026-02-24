@@ -100,8 +100,11 @@
         }
     }
 
-    async function unlinkProvider() {
-        let res = await fetchDelete<UserResponse>('/auth/v1/providers/link');
+    async function unlinkProvider(providerId: string) {
+        unlinkErr = false;
+
+        let uri = `/auth/v1/providers/${providerId}/link`;
+        let res = await fetchDelete<UserResponse>(uri);
         if (res.body) {
             user = res.body;
         } else {
@@ -159,9 +162,15 @@
             <div class="value">{accType || ''}</div>
             {#if isFederated}
                 <div class="fed-btn">
-                    <Button ariaLabel={t.account.providerUnlink} level={3} onclick={unlinkProvider}>
-                        {t.account.providerUnlink}
-                    </Button>
+                    {#each authProviders as provider (provider.id)}
+                        <Button
+                            ariaLabel={`${t.account.providerUnlink}: ${provider.name}`}
+                            level={3}
+                            onclick={() => unlinkProvider(provider.id)}
+                        >
+                            {`${t.account.providerUnlink}: ${provider.name}`}
+                        </Button>
+                    {/each}
                     {#if unlinkErr}
                         <div class="link-err value">
                             {t.account.providerUnlinkDesc}
