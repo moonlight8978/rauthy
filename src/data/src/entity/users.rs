@@ -399,6 +399,22 @@ impl User {
         Ok(slf)
     }
 
+    pub async fn find_by_federation(
+        auth_provider_id: &str,
+        federation_uid: &str,
+    ) -> Result<Self, ErrorResponse> {
+        let sql = "SELECT * FROM users WHERE auth_provider_id = $1 AND federation_uid = $2";
+        let slf = if is_hiqlite() {
+            DB::hql()
+                .query_as_one(sql, params!(auth_provider_id, federation_uid))
+                .await?
+        } else {
+            DB::pg_query_one(sql, &[&auth_provider_id, &federation_uid]).await?
+        };
+
+        Ok(slf)
+    }
+
     pub async fn find_all() -> Result<Vec<Self>, ErrorResponse> {
         let sql = "SELECT * FROM users ORDER BY created_at ASC";
         let res = if is_hiqlite() {
