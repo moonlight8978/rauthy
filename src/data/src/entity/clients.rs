@@ -1068,12 +1068,18 @@ impl Client {
             res.push(s.to_string());
         }
 
+        let matrix_enabled = RauthyConfig::get().vars.matrix.msc3861_enable;
+
         for s in scopes {
-            if self.default_scopes.contains(s) {
+            if self.default_scopes.split(',').any(|d| d == s) {
                 continue;
             }
 
-            if self.scopes.contains(s) {
+            if self
+                .scopes
+                .split(',')
+                .any(|allowed| Scope::matches(allowed, s, matrix_enabled))
+            {
                 res.push(s.clone());
             }
         }
@@ -1658,6 +1664,16 @@ impl Client {
 
             (!origins.is_empty()).then_some(origins)
         });
+        let scopes = RauthyConfig::get()
+            .vars
+            .dynamic_clients
+            .allowed_scopes
+            .join(",");
+        let default_scopes = RauthyConfig::get()
+            .vars
+            .dynamic_clients
+            .default_scopes
+            .join(",");
 
         Ok(Self {
             id,
@@ -1679,6 +1695,8 @@ impl Client {
                     .default_token_lifetime,
                 i32::MAX as u32,
             ) as i32,
+            scopes,
+            default_scopes,
             challenge: (!confidential).then_some("S256".to_string()),
             force_mfa: false,
             client_uri: req.client_uri,

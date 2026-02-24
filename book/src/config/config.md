@@ -926,6 +926,18 @@ pg_password = '123SuperSafe'
 # overwritten by: ENABLE_DYN_CLIENT_REG
 #enable = false
 
+# The allowed scopes separated by ' ' for dynamic clients.
+#
+# default: ['openid', 'profile', 'email', 'groups']
+# overwritten by: DYN_CLIENT_ALLOWED_SCOPES - single String, \n separated values
+#allowed_scopes = ['openid', 'profile', 'email', 'groups']
+
+# The default scopes separated by ' ' for dynamic clients.
+#
+# default: ['openid']
+# overwritten by: DYN_CLIENT_DEFAULT_SCOPES - single String, \n separated values
+#default_scopes = ['openid']
+
 # If specified, this secret token will be expected during
 # dynamic client registrations to be given as a
 # `Bearer <DYN_CLIENT_REG_TOKEN>` token. Needs to be communicated
@@ -985,6 +997,16 @@ pg_password = '123SuperSafe'
 # default: 60
 # overwritten by: DYN_CLIENT_CLEANUP_MINUTES
 #cleanup_minutes = 60
+
+# Defines the number of days after which an inactive dynamic client will be
+# cleaned up. This applies to clients that have been used at least once but
+# have not been active since the configured amount of days.
+#
+# WARNING: This will permanently delete client registrations.
+#
+# default: 0 (disabled)
+# overwritten by: DYN_CLIENT_CLEANUP_INACTIVE_DAYS
+#cleanup_inactive_days = 0
 
 # The rate-limiter timeout for dynamic client registration.
 # This is the timeout in seconds which will prevent an IP from
@@ -1911,6 +1933,15 @@ level_access = 'modifying'
 # default: text
 # overwritten by: LOG_FMT
 #log_fmt = 'text'
+
+[matrix]
+# Enables specific compatibility support for Matrix MSC3861 (Matrix 2.0 native OIDC).
+# This enables hierarchical scope matching (e.g. 'device' matches 'device:ID').
+# Note: Dynamic Client Registration (DCR) should be enabled for full support.
+#
+# default: false
+# overwritten by: MATRIX_SUPPORT_ENABLE
+#msc3861_enable = false
 
 [mfa]
 # If 'true', MFA for an account must be enabled to access the

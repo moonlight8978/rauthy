@@ -94,11 +94,14 @@
 | DPOP_FORCE_NONCE                           | dpop.force_nonce                            | bool       |          |
 | DPOP_NONCE_EXP                             | dpop.nonce_exp                              | u32        |          |
 | ENABLE_DYN_CLIENT_REG                      | dynamic_clients.enable                      | bool       |          |
+| DYN_CLIENT_ALLOWED_SCOPES                  | dynamic_clients.allowed_scopes              | \[String\] |          |
+| DYN_CLIENT_DEFAULT_SCOPES                  | dynamic_clients.default_scopes              | \[String\] |          |
 | DYN_CLIENT_REG_TOKEN                       | dynamic_clients.reg_token                   | String     | *5       |
 | DYN_CLIENT_DEFAULT_TOKEN_LIFETIME          | dynamic_clients.default_token_lifetime      | u32        |          |
 | DYN_CLIENT_SECRET_AUTO_ROTATE              | dynamic_clients.secret_auto_rotate          | bool       |          |
 | DYN_CLIENT_CLEANUP_INTERVAL                | dynamic_clients.cleanup_interval            | u32        |          |
 | DYN_CLIENT_CLEANUP_MINUTES                 | dynamic_clients.cleanup_minutes             | u32        |          |
+| DYN_CLIENT_CLEANUP_INACTIVE_DAYS           | dynamic_clients.cleanup_inactive_days       | u32        |          |
 | DYN_CLIENT_RATE_LIMIT_SEC                  | dynamic_clients.rate_limit_sec              | u32        |          |
 | RAUTHY_ADMIN_EMAIL                         | email.rauthy_admin_email                    | String     |          |
 | EMAIL_SUB_PREFIX                           | email.sub_prefix                            | String     |          |
@@ -180,6 +183,7 @@
 | LOG_LEVEL_DATABASE                         | logging.level_database                      | Level      |          |
 | LOG_LEVEL_ACCESS                           | logging.level_access                        | String     |          |
 | LOG_FMT                                    | logging.log_fmt                             | "json"     |          |
+| MATRIX_SUPPORT_ENABLE                      | matrix.msc3861_enable                       | bool       |          |
 | ADMIN_FORCE_MFA                            | mfa.admin_force_mfa                         | bool       |          |
 | POW_DIFFICULTY                             | pow.difficulty                              | u16        |          |
 | POW_EXP                                    | pow.exp                                     | u16        |          |

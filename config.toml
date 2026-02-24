@@ -218,10 +218,10 @@ token_len_limit = 4096
 #
 # !!! CAUTION !!!
 # JWT token revocation is a myth and doesn't exist. You can only
-# blacklist, but not revoke them, even though that's the official term
-# used in the RFC. Token revocation does only work, when a client
+# blacklist but not revoke them, even though that's the official term
+# used in the RFC. Token revocation does only work when a client
 # validates tokens against the `/introspection` or `/userinfo`
-# endpoints, but they will still be valid, if a client just validates
+# endpoints, but they will still be valid if a client just validates
 # via public keys!
 #
 # The default value of `false` makes the most sense, because token
@@ -255,7 +255,7 @@ token_revoke_device_tokens = true
 # If set to `true`, the `/auth/v1/whoami` endpoint will return all
 # request headers. Only the `Cookie` and Rauthys internal CSRF headers
 # will be hidden. Since this has the potential to leak sensitive
-# information, depending on you networking, this is disabled by default.
+# information, depending on your networking, this is disabled by default.
 #
 # default: false
 # overwritten by: WHOAMI_HEADERS
@@ -582,7 +582,7 @@ log_sync = "interval_200"
 # If you run a Cluster, a Node can re-sync cache data after a restart.
 # However, if you restart too quickly or shut down the whole cluster,
 # all your cached data will be gone.
-# In-memory only hugegly increases the throughput though, so it
+# In-memory only significantly increases the throughput though, so it
 # depends on your needs, what you should prefer.
 #
 # default: true
@@ -933,6 +933,18 @@ nonce_exp = 900
 # overwritten by: ENABLE_DYN_CLIENT_REG
 enable = true
 
+# The allowed scopes separated by ' ' for dynamic clients.
+#
+# default: ['openid', 'profile', 'email', 'groups']
+# overwritten by: DYN_CLIENT_ALLOWED_SCOPES - single String, \n separated values
+allowed_scopes = ['openid', 'profile', 'email', 'groups']
+
+# The default scopes separated by ' ' for dynamic clients.
+#
+# default: ['openid']
+# overwritten by: DYN_CLIENT_DEFAULT_SCOPES - single String, \n separated values
+default_scopes = ['openid']
+
 # If specified, this secret token will be expected during
 # dynamic client registrations to be given as a
 # `Bearer <DYN_CLIENT_REG_TOKEN>` token. Needs to be communicated
@@ -993,6 +1005,16 @@ cleanup_interval = 60
 # overwritten by: DYN_CLIENT_CLEANUP_MINUTES
 cleanup_minutes = 60
 
+# Defines the number of days after which an inactive dynamic client will be
+# cleaned up. This applies to clients that have been used at least once but
+# have not been active since the configured amount of days.
+#
+# WARNING: This will permanently delete client registrations.
+#
+# default: 0 (disabled)
+# overwritten by: DYN_CLIENT_CLEANUP_INACTIVE_DAYS
+cleanup_inactive_days = 0
+
 # The rate-limiter timeout for dynamic client registration.
 # This is the timeout in seconds which will prevent an IP from
 # registering another dynamic client, if no `DYN_CLIENT_REG_TOKEN`
@@ -1004,7 +1026,7 @@ cleanup_minutes = 60
 rate_limit_sec = 60
 
 [email]
-# This contact information will be added to the `rauthy`client
+# This contact information will be added to the `rauthy` client
 # within the anti lockout rule with each new restart.
 #
 # overwritten by: RAUTHY_ADMIN_EMAIL
@@ -1302,7 +1324,7 @@ email = 'admin@localhost'
 # provide `matrix_access_token`.
 # If both are given, the `matrix_access_token` will be preferred.
 #
-# If left empty, no messages will not be sent to Matrix.
+# If left empty, messages will not be sent to Matrix.
 # Format: `@<user_id>:<server address>`
 #
 # overwritten by: EVENT_MATRIX_USER_ID
@@ -1946,6 +1968,15 @@ level_database = 'info'
 # overwritten by: LOG_FMT
 #log_fmt = 'json'
 
+[matrix]
+# Enables specific compatibility support for Matrix MSC3861 (Matrix 2.0 native OIDC).
+# This enables hierarchical scope matching (e.g. 'device' matches 'device:ID').
+# Note: Dynamic Client Registration (DCR) should be enabled for full support.
+#
+# default: false
+# overwritten by: MATRIX_SUPPORT_ENABLE
+msc3861_enable = false
+
 [mfa]
 # If 'true', MFA for an account must be enabled to access the
 # rauthy admin UI.
@@ -1986,7 +2017,7 @@ remote_password_ttl = 120
 authorized_keys_enable = true
 
 # By default, even though these are "public" keys, the endpoint
-# to retrieve them quires authentication. This will be a `basic"
+# to retrieve them requires authentication. This will be a `basic"
 # `Authentication` header in the form of `host_id:host_secret` of
 # any valid PAM host configured on Rauthy.
 # If you set it to `false`, the endpoint will be publicly available.

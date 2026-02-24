@@ -111,7 +111,7 @@ impl RauthyConfig {
             ListenScheme::HttpHttps | ListenScheme::Https | ListenScheme::UnixHttps
         ) || vars.server.proxy_mode;
         let issuer_scheme = if is_https { "https" } else { "http" };
-        let issuer = format!("{issuer_scheme}://{}/auth/v1", vars.server.pub_url);
+        let issuer = format!("{issuer_scheme}://{}/auth/v1/", vars.server.pub_url);
 
         let Ok(log_level_access) = LogLevelAccess::from_str(&vars.logging.level_access) else {
             panic!(
@@ -266,6 +266,7 @@ pub struct Vars {
     pub i18n: VarsI18n,
     pub lifetimes: VarsLifetimes,
     pub logging: VarsLogging,
+    pub matrix: VarsMatrix,
     pub mfa: VarsMfa,
     pub pam: VarsPam,
     pub pow: VarsPow,
@@ -365,11 +366,19 @@ impl Default for Vars {
             },
             dynamic_clients: VarsDynamicClients {
                 enable: false,
+                allowed_scopes: vec![
+                    "openid".into(),
+                    "profile".into(),
+                    "email".into(),
+                    "groups".into(),
+                ],
+                default_scopes: vec!["openid".into()],
                 reg_token: None,
                 default_token_lifetime: 1800,
                 secret_auto_rotate: true,
                 cleanup_interval: 60,
                 cleanup_minutes: 60,
+                cleanup_inactive_days: 0,
                 rate_limit_sec: 60,
             },
             email: VarsEmail {
@@ -531,6 +540,9 @@ impl Default for Vars {
                 level_database: "info".into(),
                 level_access: "modifying".into(),
                 log_fmt: "text".into(),
+            },
+            matrix: VarsMatrix {
+                msc3861_enable: false,
             },
             mfa: VarsMfa {
                 admin_force_mfa: true,
@@ -861,6 +873,7 @@ impl Vars {
         slf.parse_i18n(&mut table);
         slf.parse_lifetimes(&mut table);
         slf.parse_logging(&mut table);
+        slf.parse_matrix(&mut table);
         slf.parse_mfa(&mut table);
         slf.parse_pam(&mut table);
         slf.parse_pow(&mut table);
@@ -1300,6 +1313,22 @@ impl Vars {
         ) {
             self.dynamic_clients.enable = v;
         }
+        if let Some(v) = t_str_vec(
+            &mut table,
+            "dynamic_clients",
+            "allowed_scopes",
+            "DYN_CLIENT_ALLOWED_SCOPES",
+        ) {
+            self.dynamic_clients.allowed_scopes = v.into_iter().map(Cow::from).collect::<Vec<_>>();
+        }
+        if let Some(v) = t_str_vec(
+            &mut table,
+            "dynamic_clients",
+            "default_scopes",
+            "DYN_CLIENT_DEFAULT_SCOPES",
+        ) {
+            self.dynamic_clients.default_scopes = v.into_iter().map(Cow::from).collect::<Vec<_>>();
+        }
         if let Some(v) = t_str(
             &mut table,
             "dynamic_clients",
@@ -1339,6 +1368,14 @@ impl Vars {
             "DYN_CLIENT_CLEANUP_MINUTES",
         ) {
             self.dynamic_clients.cleanup_minutes = v;
+        }
+        if let Some(v) = t_u32(
+            &mut table,
+            "dynamic_clients",
+            "cleanup_inactive_days",
+            "DYN_CLIENT_CLEANUP_INACTIVE_DAYS",
+        ) {
+            self.dynamic_clients.cleanup_inactive_days = v;
         }
         if let Some(v) = t_u32(
             &mut table,
@@ -2216,6 +2253,19 @@ impl Vars {
         }
     }
 
+    fn parse_matrix(&mut self, table: &mut toml::Table) {
+        let mut table = t_table(table, "matrix");
+
+        if let Some(v) = t_bool(
+            &mut table,
+            "matrix",
+            "msc3861_enable",
+            "MATRIX_SUPPORT_ENABLE",
+        ) {
+            self.matrix.msc3861_enable = v;
+        }
+    }
+
     fn parse_mfa(&mut self, table: &mut toml::Table) {
         let mut table = t_table(table, "mfa");
 
@@ -3007,11 +3057,14 @@ pub struct VarsDpop {
 #[derive(Debug)]
 pub struct VarsDynamicClients {
     pub enable: bool,
+    pub allowed_scopes: Vec<Cow<'static, str>>,
+    pub default_scopes: Vec<Cow<'static, str>>,
     pub reg_token: Option<String>,
     pub default_token_lifetime: u32,
     pub secret_auto_rotate: bool,
     pub cleanup_interval: u32,
     pub cleanup_minutes: u32,
+    pub cleanup_inactive_days: u32,
     pub rate_limit_sec: u32,
 }
 
@@ -3189,6 +3242,11 @@ pub struct VarsLogging {
     pub level_database: Cow<'static, str>,
     pub level_access: Cow<'static, str>,
     pub log_fmt: Cow<'static, str>,
+}
+
+#[derive(Debug)]
+pub struct VarsMatrix {
+    pub msc3861_enable: bool,
 }
 
 #[derive(Debug)]
