@@ -18,6 +18,7 @@ use rauthy_data::entity::auth_providers::{
 use rauthy_data::entity::logos::{Logo, LogoType};
 use rauthy_data::entity::pow::PowEntity;
 use rauthy_data::entity::theme::ThemeCssFull;
+use rauthy_data::entity::user_federation::UserFederation;
 use rauthy_data::entity::users::User;
 use rauthy_data::html::HtmlCached;
 use rauthy_error::{ErrorResponse, ErrorResponseType};
@@ -231,25 +232,28 @@ pub async fn post_provider_callback_handle(
 
 /// DELETE a link between an existing user account and an upstream provider
 ///
-/// This will always unlink the currently logged-in user from its registered
-/// upstream auth provider. The user account must have been set up with at least
-/// a password or a passkey. Otherwise, this endpoint will return an error.
+/// This will unlink the currently logged-in user from the selected upstream auth
+/// provider. The user account must have at least a password or a passkey set up
+/// before the last provider can be removed.
 #[utoipa::path(
     delete,
-    path = "/providers/link",
+    path = "/providers/{id}/link",
     tag = "providers",
     responses(
         (status = 200, description = "OK", body = UserResponse),
         (status = 400, description = "BadRequest", body = ErrorResponse),
     ),
 )]
-#[delete("/providers/link")]
-pub async fn delete_provider_link(principal: ReqPrincipal) -> Result<HttpResponse, ErrorResponse> {
+#[delete("/providers/{id}/link")]
+pub async fn delete_provider_link(
+    principal: ReqPrincipal,
+    id: web::Path<String>,
+) -> Result<HttpResponse, ErrorResponse> {
     principal.validate_session_auth()?;
 
     let user_id = principal.user_id()?.to_string();
-    let user = User::provider_unlink(user_id).await?;
-    Ok(HttpResponse::Ok().json(user.into_response(None)))
+    let user = User::provider_unlink(user_id, id.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(user.into_response(None).await?))
 }
 
 /// GET all upstream auth providers as templated minimal JSON
@@ -521,17 +525,19 @@ pub async fn post_provider_link(
     let user_id = principal.user_id()?.to_string();
     let user = User::find(user_id).await?;
 
-    // make sure the user is currently un-linked
-    if user.auth_provider_id.is_some() {
+    let provider_id = provider_id.into_inner();
+
+    // Make sure this provider is not already linked to the account.
+    if UserFederation::exists_for_user_provider(&user.id, &provider_id).await? {
         return Err(ErrorResponse::new(
             ErrorResponseType::BadRequest,
-            "user is already federated",
+            "user is already linked to this provider",
         ));
     }
 
     // set an encrypted cookie with the provider_id + user_id / email
     let link_cookie = AuthProviderLinkCookie {
-        provider_id: provider_id.into_inner(),
+        provider_id,
         user_id: user.id,
         user_email: user.email,
     };

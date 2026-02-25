@@ -379,3 +379,8 @@ via `RauthyConfig::get()`.
 | `just pre-pr-checks`  | Full pre-PR validation                              |
 | `just build-docs`     | Build mdBook documentation                          |
 | `just version`        | Print current version                               |
+
+## Core principles
+
+- **Simplicity first**: Make every change as simple as possible. Impact minimal code
+- **Minimal impact**: Changes should only touch what's necessary

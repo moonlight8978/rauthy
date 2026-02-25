@@ -14,6 +14,7 @@ use crate::entity::sessions::Session;
 use crate::entity::theme::ThemeCssFull;
 use crate::entity::tos::ToS;
 use crate::entity::tos_user_accept::ToSUserAccept;
+use crate::entity::user_federation::UserFederation;
 use crate::entity::users_values::UserValues;
 use crate::entity::webauthn::{PasskeyEntity, WebauthnServiceReq};
 use crate::events::event::Event;
@@ -53,8 +54,8 @@ UPDATE USERS SET
 email = $1, given_name = $2, family_name = $3, password = $4, roles = $5, groups = $6, enabled = $7,
 email_verified = $8, password_expires = $9, last_login = $10, last_failed_login = $11,
 failed_login_attempts = $12, language = $13, webauthn_user_id = $14, user_expires = $15,
-auth_provider_id = $16, federation_uid = $17, picture_id = $18
-WHERE id = $19"#;
+picture_id = $16
+WHERE id = $17"#;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AccountType {
@@ -101,8 +102,12 @@ pub struct User {
     pub language: Language,
     pub webauthn_user_id: Option<String>,
     pub user_expires: Option<i64>,
+    #[serde(default)]
     pub auth_provider_id: Option<String>,
+    #[serde(default)]
     pub federation_uid: Option<String>,
+    #[serde(default)]
+    pub federation_count: i64,
     pub picture_id: Option<String>,
 }
 
@@ -113,8 +118,7 @@ impl Debug for User {
             "User {{ id: {}, email: {}, given_name: {}, family_name: {:?}, password: <hidden>, \
         roles: {}, groups: {:?}, enabled: {}, email_verified: {}, password_expires: {:?}, \
         created_at: {}, last_login: {:?}, last_failed_login: {:?}, failed_login_attempts: {:?}, \
-        language: {}, webauthn_user_id: {:?}, user_expires: {:?}, auth_provider_id: {:?}, \
-        federation_uid: {:?}, picture_id: {:?} }}",
+        language: {}, webauthn_user_id: {:?}, user_expires: {:?}, auth_provider_id: {:?}, federation_uid: {:?}, federation_count: {}, picture_id: {:?} }}",
             self.id,
             self.email,
             self.given_name,
@@ -133,6 +137,7 @@ impl Debug for User {
             self.user_expires,
             self.auth_provider_id,
             self.federation_uid,
+            self.federation_count,
             self.picture_id,
         )
     }
@@ -158,8 +163,9 @@ impl From<tokio_postgres::Row> for User {
             language: Language::from(row.get::<_, String>("language")),
             webauthn_user_id: row.get("webauthn_user_id"),
             user_expires: row.get("user_expires"),
-            auth_provider_id: row.get("auth_provider_id"),
-            federation_uid: row.get("federation_uid"),
+            auth_provider_id: None,
+            federation_uid: None,
+            federation_count: row.get("federation_count"),
             picture_id: row.get("picture_id"),
         }
     }
@@ -628,8 +634,8 @@ OFFSET $2"#;
         let sql = r#"
 INSERT INTO users
 (id, email, given_name, family_name, roles, groups, enabled, email_verified, created_at,
-last_login, language, user_expires, auth_provider_id, federation_uid, picture_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#;
+last_login, language, user_expires, picture_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"#;
 
         if is_hiqlite() {
             DB::hql()
@@ -648,8 +654,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#;
                         new_user.last_login,
                         lang,
                         new_user.user_expires,
-                        &new_user.auth_provider_id,
-                        &new_user.federation_uid,
                         &new_user.picture_id
                     ),
                 )
@@ -681,8 +685,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#;
                     &new_user.last_login,
                     &lang,
                     &new_user.user_expires,
-                    &new_user.auth_provider_id,
-                    &new_user.federation_uid,
                     &new_user.picture_id,
                 ],
             )
@@ -746,6 +748,7 @@ LIMIT $2"#;
                     user_expires: None,
                     auth_provider_id: None,
                     federation_uid: None,
+                    federation_count: 0,
                     picture_id: row.get("picture_id"),
                 };
                 let values = UserValues {
@@ -785,6 +788,7 @@ LIMIT $2"#;
                     user_expires: None,
                     auth_provider_id: None,
                     federation_uid: None,
+                    federation_count: 0,
                     picture_id: row.get("picture_id"),
                 };
                 let values = UserValues {
@@ -805,23 +809,37 @@ LIMIT $2"#;
         Ok(res)
     }
 
-    pub async fn provider_unlink(user_id: String) -> Result<Self, ErrorResponse> {
+    pub async fn provider_unlink(
+        user_id: String,
+        provider_id: String,
+    ) -> Result<Self, ErrorResponse> {
         // we need to find the user first and validate that it has been set up properly
         // to work without a provider
-        let mut slf = Self::find(user_id).await?;
-        if slf.password.is_none() && !slf.has_webauthn_enabled() {
+        let slf = Self::find(user_id).await?;
+        // Concurrence issue: https://github.com/moonlight8978/rauthy/pull/5#discussion_r2846021261
+        let count_before = UserFederation::count_for_user(&slf.id).await?;
+
+        if !UserFederation::exists_for_user_provider(&slf.id, &provider_id).await? {
             return Err(ErrorResponse::new(
                 ErrorResponseType::BadRequest,
-                "You must have at least a password or passkey set up before you can \
-                remove a provider link",
+                "provider is not linked to this account",
             ));
         }
 
-        slf.auth_provider_id = None;
-        slf.federation_uid = None;
-        slf.save(None).await?;
+        let count_after = count_before.saturating_sub(1);
+        if slf.password.is_none() && !slf.has_webauthn_enabled() && count_after == 0 {
+            return Err(ErrorResponse::new(
+                ErrorResponseType::BadRequest,
+                "You must have at least a password or passkey set up before you can \
+                    remove a provider link",
+            ));
+        }
 
-        Ok(slf)
+        UserFederation::delete_by_user_provider(&slf.id, &provider_id).await?;
+
+        Self::invalidate_cache(&slf.id, &slf.email).await?;
+        let updated = Self::find(slf.id.clone()).await?;
+        Ok(updated)
     }
 
     /// Appends multiple necessary transaction queries to update a user to the given `Vec<_>`.
@@ -852,8 +870,6 @@ LIMIT $2"#;
                 self.language.as_str().to_string(),
                 self.webauthn_user_id,
                 self.user_expires,
-                self.auth_provider_id,
-                self.federation_uid,
                 self.picture_id,
                 self.id
             ),
@@ -891,8 +907,6 @@ LIMIT $2"#;
                 &lang,
                 &self.webauthn_user_id,
                 &self.user_expires,
-                &self.auth_provider_id,
-                &self.federation_uid,
                 &self.picture_id,
                 &self.id,
             ],
@@ -930,8 +944,6 @@ LIMIT $2"#;
                         lang,
                         &self.webauthn_user_id,
                         self.user_expires,
-                        &self.auth_provider_id,
-                        &self.federation_uid,
                         &self.picture_id,
                         &self.id
                     ),
@@ -956,8 +968,6 @@ LIMIT $2"#;
                     &lang,
                     &self.webauthn_user_id,
                     &self.user_expires,
-                    &self.auth_provider_id,
-                    &self.federation_uid,
                     &self.picture_id,
                     &self.id,
                 ],
@@ -1471,9 +1481,8 @@ LIMIT $2"#;
 }
 
 impl User {
-    #[inline]
     pub fn account_type(&self) -> AccountType {
-        if self.federation_uid.is_some() {
+        if self.federation_count > 0 {
             if self.password.is_some() {
                 AccountType::FederatedPassword
             } else if self.has_webauthn_enabled() {
@@ -1815,7 +1824,10 @@ impl User {
         self.webauthn_user_id.is_some()
     }
 
-    pub fn into_response(self, user_values: Option<UserValues>) -> UserResponse {
+    pub async fn into_response(
+        self,
+        user_values: Option<UserValues>,
+    ) -> Result<UserResponse, ErrorResponse> {
         let roles = self.get_roles();
         let groups = if self.groups.is_some() {
             Some(self.get_groups())
@@ -1823,8 +1835,19 @@ impl User {
             None
         };
         let account_type = UserAccountTypeResponse::from(self.account_type());
+        let user_federations = UserFederation::find_for_user(&self.id).await?;
+        let auth_provider_ids = if user_federations.is_empty() {
+            None
+        } else {
+            Some(
+                user_federations
+                    .into_iter()
+                    .map(|f| f.provider_id)
+                    .collect::<Vec<_>>(),
+            )
+        };
 
-        UserResponse {
+        Ok(UserResponse {
             id: self.id,
             email: self.email,
             given_name: if self.given_name.is_empty() {
@@ -1849,10 +1872,11 @@ impl User {
             user_values: user_values
                 .map(UserValuesResponse::from)
                 .unwrap_or_default(),
+            auth_provider_ids,
             auth_provider_id: self.auth_provider_id,
             federation_uid: self.federation_uid,
             picture_id: self.picture_id,
-        }
+        })
     }
 
     pub fn is_argon2_uptodate(&self, params: &argon2::Params) -> Result<bool, ErrorResponse> {
@@ -2063,6 +2087,7 @@ impl Default for User {
             user_expires: None,
             auth_provider_id: None,
             federation_uid: None,
+            federation_count: 0,
             picture_id: None,
         }
     }
@@ -2119,6 +2144,7 @@ mod tests {
             ),
             auth_provider_id: None,
             federation_uid: None,
+            federation_count: 0,
             picture_id: None,
         };
         let session = Session::try_new(&user, 1, None);
@@ -2178,6 +2204,7 @@ mod tests {
             user_expires: None,
             auth_provider_id: None,
             federation_uid: None,
+            federation_count: 0,
             picture_id: None,
         };
 

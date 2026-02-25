@@ -187,7 +187,7 @@ pub async fn post_users(
         }
     });
 
-    Ok(HttpResponse::Ok().json(user.into_response(None)))
+    Ok(HttpResponse::Ok().json(user.into_response(None).await?))
 }
 
 /// Get the configured / allowed additional custom user attribute
@@ -519,7 +519,7 @@ pub async fn get_user_by_id(
     let user = User::find(id).await?;
     let values = UserValues::find(&user.id).await?;
 
-    Ok(HttpResponse::Ok().json(user.into_response(values)))
+    Ok(HttpResponse::Ok().json(user.into_response(values).await?))
 }
 
 /// Returns the additional custom attributes for the given user id
@@ -1745,7 +1745,7 @@ pub async fn get_user_by_email(
     let user = User::find_by_email(path.into_inner()).await?;
     let values = UserValues::find(&user.id).await?;
 
-    Ok(HttpResponse::Ok().json(user.into_response(values)))
+    Ok(HttpResponse::Ok().json(user.into_response(values).await?))
 }
 
 /// Modifies a user
@@ -1849,7 +1849,7 @@ async fn handle_put_user_by_id(
         }
     });
 
-    Ok(HttpResponse::Ok().json(user.into_response(user_values)))
+    Ok(HttpResponse::Ok().json(user.into_response(user_values).await?))
 }
 
 /// Allows modification of specific user values from the user himself
@@ -1894,9 +1894,9 @@ pub async fn put_user_self(
     });
 
     if email_updated {
-        Ok(HttpResponse::Accepted().json(user.into_response(user_values)))
+        Ok(HttpResponse::Accepted().json(user.into_response(user_values).await?))
     } else {
-        Ok(HttpResponse::Ok().json(user.into_response(user_values)))
+        Ok(HttpResponse::Ok().json(user.into_response(user_values).await?))
     }
 }
 

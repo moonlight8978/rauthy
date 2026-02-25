@@ -1,7 +1,7 @@
 use crate::database::DB;
 use hiqlite_macros::params;
 use rauthy_common::is_hiqlite;
-use rauthy_error::ErrorResponse;
+use rauthy_error::{ErrorResponse, ErrorResponseType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +22,18 @@ impl From<tokio_postgres::Row> for UserFederation {
 }
 
 impl UserFederation {
+    #[inline(always)]
+    fn map_unique_violation(err: ErrorResponse) -> ErrorResponse {
+        if err.message.to_lowercase().contains("unique") {
+            ErrorResponse::new(
+                ErrorResponseType::NotAccepted,
+                "Upstream user id is already linked to another account",
+            )
+        } else {
+            err
+        }
+    }
+
     pub async fn create(
         user_id: String,
         provider_id: String,
@@ -44,7 +56,8 @@ impl UserFederation {
                         &new_federation.federation_uid
                     ),
                 )
-                .await?;
+                .await
+                .map_err(|err| Self::map_unique_violation(ErrorResponse::from(err)))?;
         } else {
             DB::pg_execute(
                 sql,
@@ -54,7 +67,8 @@ impl UserFederation {
                     &new_federation.federation_uid,
                 ],
             )
-            .await?;
+            .await
+            .map_err(Self::map_unique_violation)?;
         }
 
         Ok(new_federation)
@@ -69,6 +83,48 @@ impl UserFederation {
             let res = DB::pg_query(sql, &[&user_id], 10).await?;
             Ok(res)
         }
+    }
+
+    pub async fn count_for_user(user_id: &str) -> Result<i64, ErrorResponse> {
+        let sql = "SELECT COUNT(*) AS count FROM user_federations WHERE user_id = $1";
+        let count = if is_hiqlite() {
+            DB::hql()
+                .query_raw_one(sql, params!(user_id))
+                .await?
+                .get("count")
+        } else {
+            DB::pg_query_one_row(sql, &[&user_id]).await?.get("count")
+        };
+        Ok(count)
+    }
+
+    pub async fn has_for_user(user_id: &str) -> Result<bool, ErrorResponse> {
+        let sql = "SELECT 1 FROM user_federations WHERE user_id = $1 LIMIT 1";
+        let has_link = if is_hiqlite() {
+            !DB::hql().query_raw(sql, params!(user_id)).await?.is_empty()
+        } else {
+            DB::pg_query_rows(sql, &[&user_id], 1).await?.len() == 1
+        };
+        Ok(has_link)
+    }
+
+    pub async fn exists_for_user_provider(
+        user_id: &str,
+        provider_id: &str,
+    ) -> Result<bool, ErrorResponse> {
+        let sql = "SELECT 1 FROM user_federations WHERE user_id = $1 AND provider_id = $2 LIMIT 1";
+        let exists = if is_hiqlite() {
+            !DB::hql()
+                .query_raw(sql, params!(user_id, provider_id))
+                .await?
+                .is_empty()
+        } else {
+            DB::pg_query_rows(sql, &[&user_id, &provider_id], 1)
+                .await?
+                .len()
+                == 1
+        };
+        Ok(exists)
     }
 
     pub async fn find_by_federation_id(
@@ -106,5 +162,43 @@ impl UserFederation {
             DB::pg_execute(sql, &[&user_id]).await?;
         }
         Ok(())
+    }
+
+    pub async fn delete_by_user_provider(
+        user_id: &str,
+        provider_id: &str,
+    ) -> Result<(), ErrorResponse> {
+        let sql = "DELETE FROM user_federations WHERE user_id = $1 AND provider_id = $2";
+        if is_hiqlite() {
+            DB::hql()
+                .execute(sql, params!(user_id, provider_id))
+                .await?;
+        } else {
+            DB::pg_execute(sql, &[&user_id, &provider_id]).await?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_unique_violation() {
+        let err = ErrorResponse::new(ErrorResponseType::Database, "UNIQUE constraint failed");
+        let mapped = UserFederation::map_unique_violation(err);
+        assert_eq!(mapped.error, ErrorResponseType::NotAccepted);
+        assert_eq!(
+            mapped.message,
+            "Upstream user id is already linked to another account"
+        );
+    }
+
+    #[test]
+    fn test_map_unique_violation_passthrough() {
+        let err = ErrorResponse::new(ErrorResponseType::Database, "some other db error");
+        let mapped = UserFederation::map_unique_violation(err.clone());
+        assert_eq!(mapped, err);
     }
 }

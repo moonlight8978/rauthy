@@ -11,3 +11,9 @@ CREATE TABLE user_federations (
     CONSTRAINT user_federations_pk
         PRIMARY KEY (user_id, provider_id)
 ) STRICT;
+
+INSERT OR IGNORE INTO user_federations (user_id, provider_id, federation_uid)
+SELECT id, auth_provider_id, federation_uid
+FROM users
+WHERE auth_provider_id IS NOT NULL
+    AND federation_uid IS NOT NULL;

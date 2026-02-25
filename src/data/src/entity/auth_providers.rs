@@ -387,7 +387,12 @@ VALUES
     pub async fn find_linked_users(
         id: &str,
     ) -> Result<Vec<ProviderLinkedUserResponse>, ErrorResponse> {
-        let sql = "SELECT id, email FROM users WHERE auth_provider_id = $1";
+        let sql = r#"
+SELECT u.id, u.email
+FROM user_federations uf
+INNER JOIN users u
+    ON u.id = uf.user_id
+WHERE uf.provider_id = $1"#;
         let users = if is_hiqlite() {
             DB::hql().query_as(sql, params!(id)).await?
         } else {
@@ -1233,7 +1238,10 @@ impl AuthProviderIdClaims<'_> {
                         .await?;
 
                         (Some(user), NewFederatedUserCreated::No)
-                    } else if provider.auto_link {
+                    } else if provider.auto_link || user.federation_count > 0 {
+                        // Multi-provider login support:
+                        // if this account is already federated, allow linking an additional
+                        // provider on successful upstream authentication.
                         UserFederation::create(
                             user.id.clone(),
                             provider.id.clone(),

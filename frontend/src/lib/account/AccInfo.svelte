@@ -23,14 +23,14 @@
         user = $bindable(),
         pamUser,
         providers,
-        authProvider,
+        authProviders,
         webIdData,
         viewModePhone,
     }: {
         user: UserResponse;
         pamUser: undefined | PamUserResponse;
         providers: AuthProvidersTemplate;
-        authProvider: undefined | AuthProviderTemplate;
+        authProviders: AuthProviderTemplate[];
         viewModePhone?: boolean;
         webIdData: undefined | WebIdResponse;
     } = $props();
@@ -40,9 +40,10 @@
     let unlinkErr = $state(false);
     let showModal = $state(false);
 
-    let isFederated = $derived(user.account_type?.startsWith('federated'));
+    let isFederated = $derived(!!user.auth_provider_ids?.length);
+    let providerNames = $derived(authProviders.map(p => p.name).join(', '));
     let accType = $derived(
-        isFederated ? `${user.account_type}: ${authProvider?.name || ''}` : user.account_type,
+        isFederated ? `${user.account_type}: ${providerNames || 'UNKNOWN'}` : user.account_type,
     );
 
     let classRow: 'rowPhone' | 'row' = $derived(viewModePhone ? 'rowPhone' : 'row');
@@ -99,8 +100,11 @@
         }
     }
 
-    async function unlinkProvider() {
-        let res = await fetchDelete<UserResponse>('/auth/v1/providers/link');
+    async function unlinkProvider(providerId: string) {
+        unlinkErr = false;
+
+        let uri = `/auth/v1/providers/${providerId}/link`;
+        let res = await fetchDelete<UserResponse>(uri);
         if (res.body) {
             user = res.body;
         } else {
@@ -158,9 +162,15 @@
             <div class="value">{accType || ''}</div>
             {#if isFederated}
                 <div class="fed-btn">
-                    <Button ariaLabel={t.account.providerUnlink} level={3} onclick={unlinkProvider}>
-                        {t.account.providerUnlink}
-                    </Button>
+                    {#each authProviders as provider (provider.id)}
+                        <Button
+                            ariaLabel={`${t.account.providerUnlink}: ${provider.name}`}
+                            level={3}
+                            onclick={() => unlinkProvider(provider.id)}
+                        >
+                            {`${t.account.providerUnlink}: ${provider.name}`}
+                        </Button>
+                    {/each}
                     {#if unlinkErr}
                         <div class="link-err value">
                             {t.account.providerUnlinkDesc}

@@ -18,11 +18,11 @@
 
     let {
         user = $bindable(),
-        authProvider,
+        authProviders,
         viewModePhone,
     }: {
         user: UserResponse;
-        authProvider: undefined | AuthProviderTemplate;
+        authProviders: AuthProviderTemplate[];
         viewModePhone?: boolean;
     } = $props();
 
@@ -38,6 +38,7 @@
     let err = $state('');
     let success = $state(false);
     let mfaPurpose: undefined | MfaPurpose = $state();
+    let providerNames = $derived(authProviders.map(p => p.name).join(', '));
 
     let passwords: PropsPassword = $state({
         current: '',
@@ -168,7 +169,7 @@
     {#if accType === 'federated'}
         <div class="m-05">
             <p>{t.account.federatedConvertPassword1}</p>
-            <p><b>{authProvider?.name || 'UNKNOWN'}</b></p>
+            <p><b>{providerNames || 'UNKNOWN'}</b></p>
             <div style:height=".3rem"></div>
             <p>{t.account.federatedConvertPassword2}</p>
             {#if success}

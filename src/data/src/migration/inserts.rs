@@ -1531,8 +1531,8 @@ pub async fn users(data_before: Vec<User>) -> Result<(), ErrorResponse> {
 INSERT INTO users
 (id, email, given_name, family_name, password, roles, groups, enabled, email_verified,
 password_expires, created_at, last_login, last_failed_login, failed_login_attempts, language,
-webauthn_user_id, user_expires, auth_provider_id, federation_uid, picture_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)"#;
+webauthn_user_id, user_expires, picture_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)"#;
 
     if is_hiqlite() {
         DB::hql().execute(sql_1, params!()).await?;
@@ -1559,8 +1559,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $
                         b.language.as_str(),
                         b.webauthn_user_id,
                         b.user_expires,
-                        b.auth_provider_id,
-                        b.federation_uid,
                         b.picture_id
                     ),
                 )
@@ -1590,8 +1588,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $
                     &b.language.as_str(),
                     &b.webauthn_user_id,
                     &b.user_expires,
-                    &b.auth_provider_id,
-                    &b.federation_uid,
                     &b.picture_id,
                 ],
             )
