@@ -837,8 +837,9 @@ LIMIT $2"#;
 
         UserFederation::delete_by_user_provider(&slf.id, &provider_id).await?;
 
-        slf.save(None).await?;
-        Ok(slf)
+        Self::invalidate_cache(&slf.id, &slf.email).await?;
+        let updated = Self::find(slf.id.clone()).await?;
+        Ok(updated)
     }
 
     /// Appends multiple necessary transaction queries to update a user to the given `Vec<_>`.
