@@ -380,7 +380,7 @@ via `RauthyConfig::get()`.
 | `just build-docs`     | Build mdBook documentation                          |
 | `just version`        | Print current version                               |
 
-## Core principals
+## Core principles
 
 - **Simplicity first**: Make every change as simple as possible. Impact minimal code
 - **Minimal impact**: Changes should only touch what's necessary

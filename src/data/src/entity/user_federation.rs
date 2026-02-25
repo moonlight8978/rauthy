@@ -24,7 +24,7 @@ impl From<tokio_postgres::Row> for UserFederation {
 impl UserFederation {
     #[inline(always)]
     fn map_unique_violation(err: ErrorResponse) -> ErrorResponse {
-        if err.message.contains("UNIQUE") {
+        if err.message.to_lowercase().contains("unique") {
             ErrorResponse::new(
                 ErrorResponseType::NotAccepted,
                 "Upstream user id is already linked to another account",

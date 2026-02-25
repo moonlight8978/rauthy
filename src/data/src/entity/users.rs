@@ -816,6 +816,7 @@ LIMIT $2"#;
         // we need to find the user first and validate that it has been set up properly
         // to work without a provider
         let slf = Self::find(user_id).await?;
+        // Concurrence issue: https://github.com/moonlight8978/rauthy/pull/5#discussion_r2846021261
         let count_before = UserFederation::count_for_user(&slf.id).await?;
 
         if !UserFederation::exists_for_user_provider(&slf.id, &provider_id).await? {
