@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0](https://github.com/moonlight8978/rauthy/compare/v0.1.1...v0.2.0) (2026-02-25)
+
+
+### Features
+
+* unlink auth provider individually ([a82c43d](https://github.com/moonlight8978/rauthy/commit/a82c43d0257baaa08b6831e78cf59f557b58cbf9))
+
+
+### Bug Fixes
+
+* add unique constraint to user federation upstream id ([137b3cc](https://github.com/moonlight8978/rauthy/commit/137b3cc68d2177c47268ab1d919880d77fbd1c71))
+* safe delete federation exist check query ([67a7547](https://github.com/moonlight8978/rauthy/commit/67a75470288d8aafbad4169c5560bc314b16e66d))
+* show multiple federations in UI ([12f5a56](https://github.com/moonlight8978/rauthy/commit/12f5a560235c7309fa4fb35de2e3167c5b30d9af))
+* unlink user federations when unlink ([b7e9859](https://github.com/moonlight8978/rauthy/commit/b7e9859a872190637e465b5e2236ec757a19cb66))
+* user cache poisioning ([b8acd1d](https://github.com/moonlight8978/rauthy/commit/b8acd1dbbe9e96149e08c7316f0a41480859028c))
+
 ## v0.34.3
 
 ### Changes
