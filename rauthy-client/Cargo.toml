@@ -42,7 +42,7 @@ chrono = { version = "0.4.31", default-features = false, features = ["clock", "s
 http = "1"
 jwt-simple = { version = "0.12.6", default-features = false, features = ["pure-rust"] }
 rand = "0.9"
-reqwest = { version = "0.12.12", default-features = false, features = [
+reqwest = { version = "0.13.0", default-features = false, features = [
     "brotli", "json", "rustls-tls", "rustls-tls-webpki-roots"
 ] }
 serde = { version = "1.0.180", features = ["derive"] }
