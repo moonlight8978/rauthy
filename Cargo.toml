@@ -122,7 +122,7 @@ semver = { version = "1.0.19", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_json_path = "0.7.1"
-serde_rusqlite = "0.40"
+serde_rusqlite = "0.41"
 serde_urlencoded = "0.7.1"
 spow = { version = "0.6", features = ["server"] }
 strum = { version = "0.27", features = ["derive"] }
