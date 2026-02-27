@@ -111,7 +111,7 @@ rsa = { version = "0.9.10", features = ["serde", "sha2"] }
 ruma-client = { version = "0.17", features = [
     "client-api", "reqwest-rustls-webpki-roots"
 ] }
-rusqlite = "0.37"
+rusqlite = "0.38"
 rust-embed = "8.5.0"
 rustls = { version = "0.23", default-features = false, features = [
     "logging", "std", "tls12", "ring"
