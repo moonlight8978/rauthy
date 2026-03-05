@@ -12,6 +12,13 @@
         "patch"
       ],
       "automerge": true
+    },
+    {
+      "matchManagers": [
+        "cargo",
+        "npm"
+      ],
+      "enabled": false
     }
   ]
 }
