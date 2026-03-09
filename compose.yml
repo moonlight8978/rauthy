@@ -13,6 +13,13 @@ services:
       SWAGGER_UI_ENABLE: "true"
       SWAGGER_UI_PUBLIC: "true"
 
+  mailcrab:
+    image: marlonb/mailcrab:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+
 volumes:
   rauthy-data:
   rauthy-tls:
