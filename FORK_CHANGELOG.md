@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.3](https://github.com/moonlight8978/rauthy/compare/v0.2.2...v0.2.3) (2026-03-09)
+
+
+### Bug Fixes
+
+* remove duplicated slash on issuer endpoints ([#49](https://github.com/moonlight8978/rauthy/issues/49)) ([9b62f03](https://github.com/moonlight8978/rauthy/commit/9b62f03f2dfbb1180d5f714b5c632d4910c53a16))
+
+
+### Misc
+
+* **deps:** docker/build-push-action action v6 → v7 ([#48](https://github.com/moonlight8978/rauthy/issues/48)) ([b0263f5](https://github.com/moonlight8978/rauthy/commit/b0263f58ab55d3770973d896252f2e459d8f3e6b))
+* **deps:** docker/metadata-action action v5 → v6 ([#47](https://github.com/moonlight8978/rauthy/issues/47)) ([7d1ffe2](https://github.com/moonlight8978/rauthy/commit/7d1ffe265f11d54f630ac98b63f79ef807a752ce))
+* **deps:** docker/setup-buildx-action action v3 → v4 ([#46](https://github.com/moonlight8978/rauthy/issues/46)) ([d3fff5a](https://github.com/moonlight8978/rauthy/commit/d3fff5a442e40b69ef486bb0b97a09d5542c2642))
+
 ## [0.2.2](https://github.com/moonlight8978/rauthy/compare/v0.2.1...v0.2.2) (2026-03-05)
 
 
