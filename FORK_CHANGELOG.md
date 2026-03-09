@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.2](https://github.com/moonlight8978/rauthy/compare/v0.2.1...v0.2.2) (2026-03-05)
+
+
+### Misc
+
+* **deps:** actions/checkout action v4 → v6 ([#41](https://github.com/moonlight8978/rauthy/issues/41)) ([ca354dc](https://github.com/moonlight8978/rauthy/commit/ca354dc13ca943a586a5f5fb6d681cd488df2b77))
+* **deps:** docker/login-action action v3.6.0 → v4.0.0 ([#38](https://github.com/moonlight8978/rauthy/issues/38)) ([9d4219f](https://github.com/moonlight8978/rauthy/commit/9d4219fcd8bfebc81b5b873d9a9bae93a7ce9252))
+* **deps:** docker/setup-qemu-action action v3 → v4 ([#39](https://github.com/moonlight8978/rauthy/issues/39)) ([87c1547](https://github.com/moonlight8978/rauthy/commit/87c1547422f1576b6373507e7b752c58df6eaf3f))
+* **deps:** Node.js v22.22.0 → v24.14.0 ([#42](https://github.com/moonlight8978/rauthy/issues/42)) ([8b28166](https://github.com/moonlight8978/rauthy/commit/8b281663a71ea6d7b48382cebcaa278b98c9caab))
+* disable cargo, npm renovate, prefer origin ([227a547](https://github.com/moonlight8978/rauthy/commit/227a547d74507d7511bf5bb56e129081e71ecf25))
+* fix broken semver ([21ab785](https://github.com/moonlight8978/rauthy/commit/21ab785c17a34630dcb8311cf2f9b3cf5d133636))
+
+
+### Build
+
+* **deps-dev:** Bump minimatch from 10.2.2 to 10.2.4 in /frontend ([#1441](https://github.com/moonlight8978/rauthy/issues/1441)) ([c4439e6](https://github.com/moonlight8978/rauthy/commit/c4439e61936e7a83b1e15fc72144459f19dc280f))
+* **deps-dev:** Bump rollup from 4.58.0 to 4.59.0 in /frontend ([#1442](https://github.com/moonlight8978/rauthy/issues/1442)) ([8d49882](https://github.com/moonlight8978/rauthy/commit/8d49882d5d39669e7f6f580de1c83ae3b4143db4))
+* **deps-dev:** Bump svelte from 5.53.0 to 5.53.6 in /frontend ([#1440](https://github.com/moonlight8978/rauthy/issues/1440)) ([c3a2493](https://github.com/moonlight8978/rauthy/commit/c3a2493345db8b3f34a3866990fccdf6eb797e3c))
+
 ## [0.2.0](https://github.com/moonlight8978/rauthy/compare/v0.1.1...v0.2.0) (2026-02-25)
 
 
