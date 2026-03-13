@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4](https://github.com/moonlight8978/rauthy/compare/v0.2.3...v0.2.4) (2026-03-13)
+
+
+### Build
+
+* add trivy image scanning ([#51](https://github.com/moonlight8978/rauthy/issues/51)) ([f37d053](https://github.com/moonlight8978/rauthy/commit/f37d053712d3dc8cd4c2edfc3850b6c6a61d8f0f))
+* add trivy scanning to publish workflow ([4c6f28a](https://github.com/moonlight8978/rauthy/commit/4c6f28a4933a4c9a6fbf96843f237a12f786707a))
+* **deps-dev:** Bump devalue from 5.6.3 to 5.6.4 in /frontend ([#1458](https://github.com/moonlight8978/rauthy/issues/1458)) ([2367c3b](https://github.com/moonlight8978/rauthy/commit/2367c3b31053f5e7bd8099272581358ac0cbc164))
+* **deps:** Bump actix-web-lab from 0.24.3 to 0.26.0 ([#1457](https://github.com/moonlight8978/rauthy/issues/1457)) ([fb66992](https://github.com/moonlight8978/rauthy/commit/fb6699237ca0c3ed366645a381f988c95ab88a8a))
+* **deps:** Bump quinn-proto from 0.11.13 to 0.11.14 ([#1459](https://github.com/moonlight8978/rauthy/issues/1459)) ([5ac4f6a](https://github.com/moonlight8978/rauthy/commit/5ac4f6a209a29434a11ce50e96355cd02b677a7e))
+* **deps:** Bump quinn-proto in /rauthy-client/examples/actix-web ([#1456](https://github.com/moonlight8978/rauthy/issues/1456)) ([013abf9](https://github.com/moonlight8978/rauthy/commit/013abf96b531971e8800f4dd0510271f874ac687))
+* **deps:** Bump quinn-proto in /rauthy-client/examples/axum ([#1455](https://github.com/moonlight8978/rauthy/issues/1455)) ([5043530](https://github.com/moonlight8978/rauthy/commit/50435309113c269f89121915691ca7a05a4a752c))
+* **deps:** Bump quinn-proto in /rauthy-client/examples/generic ([#1454](https://github.com/moonlight8978/rauthy/issues/1454)) ([f4f021a](https://github.com/moonlight8978/rauthy/commit/f4f021a17938029fb455f60fc2e75f5b63e2089a))
+
 ## [0.2.3](https://github.com/moonlight8978/rauthy/compare/v0.2.2...v0.2.3) (2026-03-09)
 
 
