@@ -2,9 +2,6 @@ name: Docker Image Scanning
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - build/image-scanning
 
 jobs:
   image-scanning:
