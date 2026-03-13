@@ -3,3 +3,4 @@ exit-code: 0
 ignore-unfixed: true
 output: trivy-report.sarif
 scanners: vuln,secret
+severity: CRITICAL,HIGH
