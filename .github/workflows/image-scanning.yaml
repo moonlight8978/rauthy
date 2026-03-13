@@ -1,0 +1,27 @@
+name: Docker Image Scanning
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/image-scanning
+
+jobs:
+  image-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          trivy-config: trivy.yaml
+          image-ref: 'ghcr.io/moonlight8978/rauthy:0.2.3'
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-report.sarif'
+          category: docker-image
+
