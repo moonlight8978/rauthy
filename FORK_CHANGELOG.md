@@ -1,3 +1,5 @@
+## [0.2.6](https://github.com/moonlight8978/rauthy/compare/v0.2.5...v0.2.6) (2026-03-16)
+
 # Changelog
 
 ## [0.2.4](https://github.com/moonlight8978/rauthy/compare/v0.2.3...v0.2.4) (2026-03-13)
