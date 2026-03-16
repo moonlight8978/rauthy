@@ -19,4 +19,6 @@ plugins:
     - changelogFile: FORK_CHANGELOG.md
   - - "@semantic-release/git"
     - message: "chore(release): ${nextRelease.version} [skip ci]"
+      assets:
+        - FORK_CHANGELOG.md
   - "@semantic-release/github"
