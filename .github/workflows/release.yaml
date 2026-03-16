@@ -16,6 +16,12 @@ jobs:
           app-id: ${{ vars.ASSISTANT_APP_ID }}
           private-key: ${{ secrets.ASSISTANT_APP_PRIVATE_KEY }}
 
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.ghapp-auth.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.ghapp-auth.outputs.token }}
+
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -26,9 +32,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.ghapp-auth.outputs.token }}
           GIT_AUTHOR_NAME: '${{ steps.ghapp-auth.outputs.app-slug }}[bot]'
-          GIT_AUTHOR_EMAIL: '${{ steps.ghapp-auth.outputs.user-id }}+${{ steps.ghapp-auth.outputs.app-slug }}[bot]@users.noreply.github.com'
+          GIT_AUTHOR_EMAIL: '${{ steps.get-user-id.outputs.user-id }}+${{ steps.ghapp-auth.outputs.app-slug }}[bot]@users.noreply.github.com'
           GIT_COMMITTER_NAME: '${{ steps.ghapp-auth.outputs.app-slug }}[bot]'
-          GIT_COMMITTER_EMAIL: '${{ steps.ghapp-auth.outputs.user-id }}+${{ steps.ghapp-auth.outputs.app-slug }}[bot]@users.noreply.github.com'
+          GIT_COMMITTER_EMAIL: '${{ steps.get-user-id.outputs.user-id }}+${{ steps.ghapp-auth.outputs.app-slug }}[bot]@users.noreply.github.com'
         with:
           extra_plugins: |
             conventional-changelog-conventionalcommits
