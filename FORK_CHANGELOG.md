@@ -1,3 +1,9 @@
+## [0.3.0](https://github.com/moonlight8978/rauthy/compare/v0.2.6...v0.3.0) (2026-03-30)
+
+### Features
+
+* **idp_hint:** Adds support to pass idp_hint as a parameter ([#1460](https://github.com/moonlight8978/rauthy/issues/1460)) ([21e1470](https://github.com/moonlight8978/rauthy/commit/21e1470eb1770b1251a87a64bd4d247f374d5c19))
+
 ## [0.2.6](https://github.com/moonlight8978/rauthy/compare/v0.2.5...v0.2.6) (2026-03-16)
 
 # Changelog
